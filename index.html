@@ -10856,18 +10856,33 @@ body.lh-erp-body {
             <!-- Problem Attachments -->
             ${query.attachments && query.attachments.length > 0 ? `
               <div class="attachments-list-section">
-                <h4><i class="fa-solid fa-paperclip"></i> Problem Supporting Documents & Attachments (${query.attachments.length})</h4>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                  <h4 style="margin: 0; font-size: 14px; font-weight: 700;"><i class="fa-solid fa-paperclip text-primary"></i> Supporting Documents & Attachments (${query.attachments.length})</h4>
+                  <span style="font-size: 11px; color: var(--text-muted);"><i class="fa-solid fa-circle-check text-emerald"></i> Click to download file</span>
+                </div>
                 <div class="attachments-pills">
-                  ${query.attachments.map((att) => `
-                    <div class="attachment-pill">
-                      <i class="fa-solid ${att.name.endsWith(".pdf") ? "fa-file-pdf text-red" : att.name.endsWith(".xlsx") || att.name.endsWith(".csv") ? "fa-file-excel text-emerald" : "fa-file-lines text-blue"}"></i>
-                      <span class="attachment-name">${att.name}</span>
-                      <span class="attachment-size">${att.size || "350 KB"}</span>
-                      <button class="btn-download-mock" title="Download Document" onclick="alert('Downloading attachment: ${att.name}')">
-                        <i class="fa-solid fa-download"></i>
+                  ${query.attachments.map((att, attIdx) => {
+                    const isImg = (att.type && att.type.startsWith("image/")) || /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(att.name);
+                    const isPdf = (att.type && att.type.includes("pdf")) || att.name.toLowerCase().endsWith(".pdf");
+                    const isExcel = /\.(xlsx?|csv)$/i.test(att.name);
+                    return `
+                    <div class="attachment-pill" style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 8px; background: rgba(37,99,235,0.05); border: 1px solid rgba(37,99,235,0.2); box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin: 4px;">
+                      <i class="fa-solid ${isPdf ? "fa-file-pdf text-red" : isExcel ? "fa-file-excel text-emerald" : isImg ? "fa-file-image text-blue" : "fa-file-lines text-blue"}" style="font-size: 16px;"></i>
+                      <div style="display: flex; flex-direction: column;">
+                        <span class="attachment-name" style="font-weight: 600; font-size: 13px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${att.name}">${att.name}</span>
+                        <span class="attachment-size" style="font-size: 11px; color: var(--text-muted);">${att.size || ""}</span>
+                      </div>
+                      ${isImg && (att.url || att.data) ? `
+                        <button type="button" class="btn btn-sm btn-outline btn-preview-attachment" data-query-id="${query.id}" data-att-idx="${attIdx}" title="Preview Image" style="padding: 4px 8px; border-radius: 5px; font-size: 11px; margin-left: 6px;">
+                          <i class="fa-solid fa-eye text-primary"></i> View
+                        </button>
+                      ` : ""}
+                      <button type="button" class="btn btn-sm btn-primary btn-download-attachment" data-query-id="${query.id}" data-att-idx="${attIdx}" title="Download Document" style="padding: 4px 10px; border-radius: 5px; font-size: 11px; margin-left: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="fa-solid fa-download"></i> Download
                       </button>
                     </div>
-                  `).join("")}
+                    `;
+                  }).join("")}
                 </div>
               </div>
             ` : ""}
@@ -10925,11 +10940,16 @@ body.lh-erp-body {
                   <div class="solution-attachments">
                     <label class="solution-label"><i class="fa-solid fa-paperclip"></i> Resolution Proofs & Patches</label>
                     <div class="attachments-pills">
-                      ${query.solution.attachments.map((att) => `
-                        <div class="attachment-pill pill-success">
-                          <i class="fa-solid fa-file-shield text-emerald"></i>
-                          <span class="attachment-name">${att.name}</span>
-                          <button class="btn-download-mock" onclick="alert('Downloading resolution attachment: ${att.name}')"><i class="fa-solid fa-download"></i></button>
+                      ${query.solution.attachments.map((att, solIdx) => `
+                        <div class="attachment-pill pill-success" style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 8px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); margin: 4px;">
+                          <i class="fa-solid fa-file-shield text-emerald" style="font-size: 16px;"></i>
+                          <div style="display: flex; flex-direction: column;">
+                            <span class="attachment-name" style="font-weight: 600; font-size: 13px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${att.name}">${att.name}</span>
+                            <span class="attachment-size" style="font-size: 11px; color: var(--text-muted);">${att.size || ""}</span>
+                          </div>
+                          <button type="button" class="btn btn-sm btn-primary btn-download-solution-att" data-query-id="${query.id}" data-sol-idx="${solIdx}" title="Download Resolution File" style="padding: 4px 10px; border-radius: 5px; font-size: 11px; margin-left: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-download"></i> Download
+                          </button>
                         </div>
                       `).join("")}
                     </div>
@@ -11167,6 +11187,52 @@ body.lh-erp-body {
         state.updateQuery(query, `Comment added to ${query.id}`);
         input.value = "";
         this.render(query.id);
+      });
+
+      // Real attachment download & preview handlers
+      container.querySelectorAll(".btn-download-attachment").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const qId = btn.getAttribute("data-query-id");
+          const idx = parseInt(btn.getAttribute("data-att-idx"), 10);
+          const q = state.getQueryById(qId);
+          if (q && q.attachments && q.attachments[idx]) {
+            if (typeof app !== "undefined" && app.downloadAttachmentFile) {
+              app.downloadAttachmentFile(q.attachments[idx]);
+            }
+          }
+        });
+      });
+
+      container.querySelectorAll(".btn-preview-attachment").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const qId = btn.getAttribute("data-query-id");
+          const idx = parseInt(btn.getAttribute("data-att-idx"), 10);
+          const q = state.getQueryById(qId);
+          if (q && q.attachments && q.attachments[idx]) {
+            if (typeof app !== "undefined" && app.previewAttachmentFile) {
+              app.previewAttachmentFile(q.attachments[idx]);
+            }
+          }
+        });
+      });
+
+      container.querySelectorAll(".btn-download-solution-att").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const qId = btn.getAttribute("data-query-id");
+          const idx = parseInt(btn.getAttribute("data-sol-idx"), 10);
+          const q = state.getQueryById(qId);
+          if (q && q.solution && q.solution.attachments && q.solution.attachments[idx]) {
+            if (typeof app !== "undefined" && app.downloadAttachmentFile) {
+              app.downloadAttachmentFile(q.solution.attachments[idx]);
+            }
+          }
+        });
       });
     }
   };
@@ -11626,34 +11692,75 @@ body.lh-erp-body {
       window.addEventListener("keydown", this._keyHandler);
     },
     handleUploadedFiles(files) {
+      if (!files || files.length === 0) {
+        this.renderUploadedFilesList();
+        return;
+      }
       const listContainer = document.getElementById("lh-attached-files-list");
-      files.forEach((f) => {
-        const sizeKb = Math.round(f.size / 1024);
-        const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
-        this.uploadedFiles.push({
-          name: f.name,
-          size: sizeStr,
-          type: f.type || "application/octet-stream"
+      if (listContainer) {
+        listContainer.innerHTML = `<div class="text-sm text-secondary p-2"><i class="fa-solid fa-spinner fa-spin text-primary"></i> Reading ${files.length} attached document(s)...</div>`;
+      }
+      const filePromises = Array.from(files).map((f) => {
+        return new Promise((resolve) => {
+          const sizeKb = Math.round(f.size / 1024);
+          const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            resolve({
+              name: f.name,
+              size: sizeStr,
+              type: f.type || "application/octet-stream",
+              data: e.target.result,
+              fileObj: f
+            });
+          };
+          reader.onerror = () => {
+            resolve({
+              name: f.name,
+              size: sizeStr,
+              type: f.type || "application/octet-stream",
+              data: null
+            });
+          };
+          reader.readAsDataURL(f);
         });
       });
-      if (listContainer) {
-        listContainer.innerHTML = this.uploadedFiles.map((f, idx) => `
-        <div class="lh-file-badge">
-          <i class="fa-solid ${f.name.endsWith(".pdf") ? "fa-file-pdf text-red" : f.name.endsWith(".xlsx") || f.name.endsWith(".csv") ? "fa-file-excel text-emerald" : "fa-file-image text-blue"}"></i>
-          <span class="lh-file-badge-name">${f.name}</span>
-          <span class="lh-file-badge-size">(${f.size})</span>
-          <button type="button" class="lh-btn-remove-file" data-idx="${idx}" title="Remove file"><i class="fa-solid fa-xmark"></i></button>
+
+      Promise.all(filePromises).then((loaded) => {
+        loaded.forEach((item) => {
+          const exists = this.uploadedFiles.some((u) => u.name === item.name);
+          if (!exists) this.uploadedFiles.push(item);
+        });
+        this.renderUploadedFilesList();
+      });
+    },
+
+    renderUploadedFilesList() {
+      const listContainer = document.getElementById("lh-attached-files-list");
+      if (!listContainer) return;
+      if (this.uploadedFiles.length === 0) {
+        listContainer.innerHTML = "";
+        return;
+      }
+      listContainer.innerHTML = this.uploadedFiles.map((f, idx) => `
+        <div class="lh-file-badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 6px; background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.2); margin: 3px;">
+          <i class="fa-solid ${f.name.endsWith(".pdf") ? "fa-file-pdf text-red" : f.name.endsWith(".xlsx") || f.name.endsWith(".csv") ? "fa-file-excel text-emerald" : f.type && f.type.startsWith("image/") ? "fa-file-image text-blue" : "fa-file-lines text-blue"}"></i>
+          <span class="lh-file-badge-name" style="font-weight: 600; font-size: 12px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${f.name}</span>
+          <span class="lh-file-badge-size" style="font-size: 11px; color: var(--text-muted);">(${f.size})</span>
+          ${f.data && f.type && f.type.startsWith("image/") ? `
+            <img src="${f.data}" style="height: 22px; width: 22px; object-fit: cover; border-radius: 3px; border: 1px solid rgba(0,0,0,0.15);" alt="thumb">
+          ` : ""}
+          <button type="button" class="lh-btn-remove-file" data-idx="${idx}" title="Remove file" style="background: none; border: none; cursor: pointer; color: #ef4444; margin-left: 4px;"><i class="fa-solid fa-xmark"></i></button>
         </div>
       `).join("");
-        listContainer.querySelectorAll(".lh-btn-remove-file").forEach((btn) => {
-          btn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const idx = parseInt(btn.getAttribute("data-idx"));
-            this.uploadedFiles.splice(idx, 1);
-            this.handleUploadedFiles([]);
-          });
+      listContainer.querySelectorAll(".lh-btn-remove-file").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.getAttribute("data-idx"));
+          this.uploadedFiles.splice(idx, 1);
+          this.renderUploadedFilesList();
         });
-      }
+      });
     },
     openLookupModal(lookupKey) {
       const catalog = this.lookupData[lookupKey];
@@ -11845,8 +11952,56 @@ body.lh-erp-body {
         priority,
         status: "Open",
         expectedDate: new Date(Date.now() + 48 * 60 * 60 * 1e3).toISOString(),
-        attachments: this.uploadedFiles || []
+        attachments: (this.uploadedFiles || []).map((u) => ({
+          name: u.name,
+          size: u.size,
+          type: u.type,
+          data: u.data || null,
+          url: u.url || null
+        }))
       });
+
+      // Background upload attached files to Supabase Storage Bucket for cross-PC accessibility
+      if (this.uploadedFiles && this.uploadedFiles.length > 0 && supabaseService.isConnected) {
+        (async () => {
+          let updated = false;
+          for (let i = 0; i < this.uploadedFiles.length; i++) {
+            const u = this.uploadedFiles[i];
+            if (u.data && (!u.url || u.url === "")) {
+              try {
+                const parts = u.data.split(";base64,");
+                if (parts.length === 2) {
+                  const contentType = parts[0].split(":")[1] || u.type || "application/octet-stream";
+                  const byteCharacters = atob(parts[1]);
+                  const byteArrays = [];
+                  for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+                    const slice = byteCharacters.slice(offset, offset + 512);
+                    const byteNumbers = new Array(slice.length);
+                    for (let j = 0; j < slice.length; j++) {
+                      byteNumbers[j] = slice.charCodeAt(j);
+                    }
+                    byteArrays.push(new Uint8Array(byteNumbers));
+                  }
+                  const blob = new Blob(byteArrays, { type: contentType });
+                  const cleanName = u.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+                  const storagePath = `attachments/${newQuery.id}_${cleanName}`;
+                  const publicUrl = await supabaseService.uploadToStorage(storagePath, blob, contentType);
+                  if (publicUrl && newQuery.attachments[i]) {
+                    newQuery.attachments[i].url = publicUrl;
+                    updated = true;
+                  }
+                }
+              } catch (upErr) {
+                console.warn("[Attachment Storage Notice]", upErr);
+              }
+            }
+          }
+          if (updated) {
+            state.updateQuery(newQuery, "Updated attachment cloud URLs");
+          }
+        })();
+      }
+
       window.dispatchEvent(new CustomEvent("showToast", {
         detail: {
           title: "Ticket Raised to Admin",
@@ -16162,6 +16317,147 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         toast.classList.add("toast-fade-out");
         setTimeout(() => toast.remove(), 400);
       }, 4500);
+    }
+
+    downloadAttachmentFile(att) {
+      if (!att) return;
+      const fileName = att.name || "attachment";
+
+      // 1. If public cloud URL is present (from Supabase Storage)
+      if (att.url) {
+        fetch(att.url)
+          .then((res) => {
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            return res.blob();
+          })
+          .then((blob) => {
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = blobUrl;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+            this.showToast("Download Complete", `Downloaded ${fileName}`, "success");
+          })
+          .catch(() => {
+            // Fallback direct link
+            const a = document.createElement("a");
+            a.href = att.url;
+            a.download = fileName;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          });
+        return;
+      }
+
+      // 2. If Base64 data URL is present
+      if (att.data && typeof att.data === "string" && att.data.startsWith("data:")) {
+        try {
+          const parts = att.data.split(";base64,");
+          if (parts.length === 2) {
+            const contentType = parts[0].split(":")[1] || "application/octet-stream";
+            const byteCharacters = atob(parts[1]);
+            const byteArrays = [];
+            for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+              const slice = byteCharacters.slice(offset, offset + 512);
+              const byteNumbers = new Array(slice.length);
+              for (let i = 0; i < slice.length; i++) {
+                byteNumbers[i] = slice.charCodeAt(i);
+              }
+              byteArrays.push(new Uint8Array(byteNumbers));
+            }
+            const blob = new Blob(byteArrays, { type: contentType });
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = blobUrl;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+            this.showToast("Download Complete", `Downloaded ${fileName}`, "success");
+            return;
+          }
+        } catch (e) {
+          console.warn("Base64 download warning:", e);
+        }
+        const a = document.createElement("a");
+        a.href = att.data;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        this.showToast("Download Complete", `Downloaded ${fileName}`, "success");
+        return;
+      }
+
+      // 3. Fallback: If only metadata exists (no bytes stored)
+      const content = `UMA CONNECT - ATTACHMENT RECORD\n` +
+        `========================================\n` +
+        `File Name: ${fileName}\n` +
+        `File Size: ${att.size || "Unknown"}\n` +
+        `MIME Type: ${att.type || "Document"}\n` +
+        `Notice: This attachment was logged with the ticket. Future files uploaded with the updated uploader store full binary content for direct download.\n`;
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = fileName.endsWith(".txt") ? fileName : `${fileName}.info.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+      this.showToast("Attachment Record", `Downloaded details for ${fileName}`, "info");
+    }
+
+    previewAttachmentFile(att) {
+      if (!att) return;
+      const src = att.url || att.data;
+      if (!src) {
+        this.downloadAttachmentFile(att);
+        return;
+      }
+      const existing = document.getElementById("attachment-preview-modal");
+      if (existing) existing.remove();
+      const modal = document.createElement("div");
+      modal.id = "attachment-preview-modal";
+      modal.className = "modal-overlay animate-fade-in";
+      modal.style.zIndex = "99999";
+      modal.innerHTML = `
+        <div class="modal-container modal-lg" style="max-width: 840px; padding: 0; overflow: hidden; border-radius: 12px; background: var(--bg-card, #ffffff); box-shadow: 0 20px 50px rgba(0,0,0,0.35);">
+          <div class="modal-header" style="padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color, #e2e8f0);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <i class="fa-solid fa-file-image text-primary" style="font-size: 20px;"></i>
+              <div>
+                <h4 style="margin: 0; font-size: 14px; font-weight: 700;">${att.name}</h4>
+                <span style="font-size: 11px; color: var(--text-muted);">${att.size || ""}</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button type="button" class="btn btn-sm btn-primary" id="btn-modal-download-att" style="padding: 6px 14px; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                <i class="fa-solid fa-download"></i> Download
+              </button>
+              <button type="button" class="btn-close-modal" id="btn-close-preview-modal" style="font-size: 24px; line-height: 1; border: none; background: transparent; cursor: pointer; color: var(--text-muted);">&times;</button>
+            </div>
+          </div>
+          <div style="padding: 24px; display: flex; justify-content: center; align-items: center; background: #0b1120; max-height: 75vh; overflow: auto;">
+            <img src="${src}" style="max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.5);" alt="${att.name}">
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.querySelector("#btn-close-preview-modal")?.addEventListener("click", () => modal.remove());
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) modal.remove();
+      });
+      modal.querySelector("#btn-modal-download-att")?.addEventListener("click", () => {
+        this.downloadAttachmentFile(att);
+      });
     }
   };
 
