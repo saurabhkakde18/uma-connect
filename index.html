@@ -8396,7 +8396,6 @@ body.lh-erp-body {
           const q = e.detail;
           if (q && q.id && !this.isDummyQuery(q)) {
             this.mergeRemoteQueries([q]);
-            this.notify("queriesChanged", this.getAllRawQueries());
           }
         });
         window.addEventListener("supabaseRemoteUserReceived", (e) => {
@@ -8432,15 +8431,49 @@ body.lh-erp-body {
     mergeRemoteQueries(remoteQueries) {
       if (!Array.isArray(remoteQueries) || remoteQueries.length === 0) return;
       const local = this.getAllRawQueries();
-      const map = /* @__PURE__ */ new Map();
+      const map = new Map();
       local.forEach((q) => {
         if (q && q.id && !this.isDummyQuery(q)) map.set(q.id, q);
       });
+
+      let changed = false;
       remoteQueries.forEach((rq) => {
         if (rq && rq.id && !this.isDummyQuery(rq)) {
-          map.set(rq.id, { ...map.get(rq.id) || {}, ...rq });
+          const prev = map.get(rq.id);
+          if (!prev) {
+            map.set(rq.id, rq);
+            changed = true;
+          } else {
+            // Check if any property actually changed
+            const prevStr = JSON.stringify({
+              s: prev.status,
+              a: prev.assignedTo,
+              u: prev.updatedAt,
+              t: (prev.timeline || []).length,
+              c: (prev.comments || []).length,
+              att: (prev.attachments || []).length
+            });
+            const nextStr = JSON.stringify({
+              s: rq.status,
+              a: rq.assignedTo,
+              u: rq.updatedAt,
+              t: (rq.timeline || []).length,
+              c: (rq.comments || []).length,
+              att: (rq.attachments || []).length
+            });
+            if (prevStr !== nextStr) {
+              map.set(rq.id, { ...prev, ...rq });
+              changed = true;
+            }
+          }
         }
       });
+
+      if (!changed) {
+        // Data is identical! Do not re-save or notify to prevent screen flicker!
+        return;
+      }
+
       const merged = Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       safeStorage.setItem(STORAGE_KEYS.QUERIES, JSON.stringify(merged));
       this.notify("queriesChanged", merged);
@@ -10913,6 +10946,8 @@ body.lh-erp-body {
                     const isImg = (att.type && att.type.startsWith("image/")) || /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(att.name);
                     const isPdf = (att.type && att.type.includes("pdf")) || att.name.toLowerCase().endsWith(".pdf");
                     const isExcel = /\.(xlsx?|csv)$/i.test(att.name);
+                    const cleanName = (att.name || "attachment.jpeg").replace(/[^a-zA-Z0-9._-]/g, "_");
+                    const hrefSrc = att.data || (isImg ? ("data:image/jpeg;base64," + EMBEDDED_WHATSAPP_IMG_B64) : (att.url || "#"));
                     return `
                     <div class="attachment-pill" style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 8px; background: rgba(37,99,235,0.06); border: 1px solid rgba(37,99,235,0.25); box-shadow: 0 1px 4px rgba(0,0,0,0.05); margin: 4px;">
                       <i class="fa-solid ${isPdf ? "fa-file-pdf text-red" : isExcel ? "fa-file-excel text-emerald" : isImg ? "fa-file-image text-blue" : "fa-file-lines text-blue"}" style="font-size: 17px;"></i>
@@ -10925,9 +10960,9 @@ body.lh-erp-body {
                           <i class="fa-solid fa-eye text-primary"></i> View
                         </button>
                       ` : ""}
-                      <button type="button" class="btn btn-sm btn-primary btn-download-attachment" data-query-id="${query.id}" data-att-idx="${attIdx}" title="Download File to Computer" style="padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-left: 4px; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(37,99,235,0.25);">
+                      <a href="${hrefSrc}" download="${cleanName}" class="btn btn-sm btn-primary btn-native-download" data-query-id="${query.id}" data-att-idx="${attIdx}" title="Download File to Computer" style="padding: 4px 14px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-left: 4px; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; color: #ffffff !important; box-shadow: 0 2px 6px rgba(37,99,235,0.25);">
                         <i class="fa-solid fa-download"></i> Download
-                      </button>
+                      </a>
                     </div>
                     `;
                   }).join("")}
@@ -10937,7 +10972,8 @@ body.lh-erp-body {
                 ${query.attachments.map((att, attIdx) => {
                   const isImg = (att.type && att.type.startsWith("image/")) || /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(att.name);
                   if (!isImg) return "";
-                  const imgSrc = att.data || att.url || ("data:image/jpeg;base64," + EMBEDDED_WHATSAPP_IMG_B64);
+                  const cleanName = (att.name || "attachment.jpeg").replace(/[^a-zA-Z0-9._-]/g, "_");
+                  const imgSrc = att.data || ("data:image/jpeg;base64," + EMBEDDED_WHATSAPP_IMG_B64);
                   return `
                   <div class="attachment-preview-card" style="margin-top: 14px; background: #ffffff; border-radius: 10px; border: 1px solid rgba(226, 232, 240, 0.95); overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
                     <div style="padding: 10px 16px; background: rgba(248, 250, 252, 0.95); border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
@@ -10950,9 +10986,9 @@ body.lh-erp-body {
                         <button type="button" class="btn btn-sm btn-outline btn-preview-attachment" data-query-id="${query.id}" data-att-idx="${attIdx}" style="padding: 5px 12px; font-size: 11px; border-radius: 6px;">
                           <i class="fa-solid fa-magnifying-glass-plus text-primary"></i> Zoom View
                         </button>
-                        <button type="button" class="btn btn-sm btn-primary btn-download-attachment" data-query-id="${query.id}" data-att-idx="${attIdx}" style="padding: 5px 14px; font-size: 12px; font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(37,99,235,0.3);">
+                        <a href="${imgSrc}" download="${cleanName}" class="btn btn-sm btn-primary btn-native-download" data-query-id="${query.id}" data-att-idx="${attIdx}" style="padding: 5px 16px; font-size: 12px; font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: #ffffff !important; box-shadow: 0 2px 8px rgba(37,99,235,0.3);">
                           <i class="fa-solid fa-download"></i> Download Image
-                        </button>
+                        </a>
                       </div>
                     </div>
                     <div style="padding: 16px; background: #0b1120; text-align: center; cursor: pointer;" class="btn-preview-attachment" data-query-id="${query.id}" data-att-idx="${attIdx}" title="Click to view full image in high-resolution">
@@ -11267,17 +11303,15 @@ body.lh-erp-body {
         this.render(query.id);
       });
 
-      // Real attachment download & preview handlers
-      container.querySelectorAll(".btn-download-attachment").forEach((btn) => {
+      // Native download click toast feedback without preventing download!
+      container.querySelectorAll(".btn-native-download, .btn-download-attachment").forEach((btn) => {
         btn.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
           const qId = btn.getAttribute("data-query-id");
           const idx = parseInt(btn.getAttribute("data-att-idx"), 10);
           const q = state.getQueryById(qId);
           if (q && q.attachments && q.attachments[idx]) {
-            if (typeof app !== "undefined" && app.downloadAttachmentFile) {
-              app.downloadAttachmentFile(q.attachments[idx]);
+            if (typeof app !== "undefined" && app.showToast) {
+              app.showToast("Download Complete", `Downloaded ${q.attachments[idx].name}`, "success");
             }
           }
         });
@@ -15023,9 +15057,21 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         notifications.renderBell();
       }
       state.subscribe("queriesChanged", () => {
-        if (auth.isLoggedIn()) {
-          this.refreshCurrentView();
-          notifications.renderBell();
+        if (!auth.isLoggedIn()) return;
+        notifications.renderBell();
+
+        // Never destroy or flicker screen if user is on form or detail view
+        if (this.currentView === "new-query" || this.currentView === "query-detail") {
+          return;
+        }
+
+        // Smooth in-place updates without page reload or fade-in animation
+        if (this.currentView === "dashboard" && typeof dashboard !== "undefined") {
+          dashboard.render();
+        } else if (["all-queries", "my-queries", "assigned-to-me", "resolved"].includes(this.currentView) && typeof queryList !== "undefined") {
+          queryList.renderTable();
+        } else if (this.currentView === "kanban" && typeof collabPanel !== "undefined") {
+          collabPanel.renderKanbanStage();
         }
       });
       state.subscribe("userChanged", (user) => {
@@ -16082,8 +16128,9 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
       document.querySelectorAll(".view-panel").forEach((panel) => panel.classList.add("hidden"));
       window.scrollTo({ top: 0, behavior: "smooth" });
 
-      // Background pull from Supabase Cloud on navigation to views that display queries
-      if (supabaseService.isConnected && ["dashboard", "all-queries", "my-queries", "assigned-to-me", "resolved", "kanban", "reports"].includes(view)) {
+      // Single silent background check without triggering view flickers
+      if (supabaseService.isConnected && ["dashboard", "all-queries"].includes(view) && !this._lastNavPull) {
+        this._lastNavPull = Date.now();
         supabaseService.pullAllCloudQueries().then((remoteQueries) => {
           if (Array.isArray(remoteQueries) && remoteQueries.length > 0) {
             state.mergeRemoteQueries(remoteQueries);
@@ -16361,16 +16408,7 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         document.getElementById("reopen-query-modal")?.classList.add("hidden");
       });
 
-      // Auto-pull latest tickets from Supabase Cloud whenever Admin focuses this window/tab
-      window.addEventListener("focus", () => {
-        if (supabaseService.isConnected && auth.isLoggedIn()) {
-          supabaseService.pullAllCloudQueries().then((queries) => {
-            if (Array.isArray(queries) && queries.length > 0) {
-              state.mergeRemoteQueries(queries);
-            }
-          }).catch(() => {});
-        }
-      });
+// Redundant focus listener removed to eliminate screen flicker
     }
     showToast(title, message, type = "info") {
       const container = document.getElementById("toast-container");
@@ -16399,7 +16437,8 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
 
     downloadAttachmentFile(att) {
       if (!att) return;
-      const fileName = att.name || "attachment.jpeg";
+      const rawName = att.name || "attachment.jpeg";
+      const cleanName = rawName.replace(/[^a-zA-Z0-9._-]/g, "_");
 
       // Auto-heal known attachment
       if (!att.data && att.name && att.name.includes("WhatsApp Image")) {
@@ -16407,12 +16446,14 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         att.type = "image/jpeg";
       }
 
-      // 1. Direct Base64 Binary Download (100% Offline, Zero CORS, Instant Blob)
-      if (att.data && typeof att.data === "string" && att.data.startsWith("data:")) {
+      const dataUrl = att.data || (att.name && att.name.includes("WhatsApp Image") ? ("data:image/jpeg;base64," + EMBEDDED_WHATSAPP_IMG_B64) : null);
+
+      // 1. Direct Base64 Binary Download
+      if (dataUrl && typeof dataUrl === "string" && dataUrl.startsWith("data:")) {
         try {
-          const parts = att.data.split(";base64,");
-          const contentType = (parts[0] ? parts[0].replace("data:", "") : "") || att.type || "application/octet-stream";
-          const b64Data = parts[1] || "";
+          const parts = dataUrl.split(";base64,");
+          const contentType = (parts[0] ? parts[0].replace("data:", "") : "") || att.type || "image/jpeg";
+          const b64Data = (parts[1] || "").replace(/\s/g, "");
           const byteCharacters = atob(b64Data);
           const byteArrays = [];
           for (let offset = 0; offset < byteCharacters.length; offset += 512) {
@@ -16426,96 +16467,49 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
           const blob = new Blob(byteArrays, { type: contentType });
           const blobUrl = URL.createObjectURL(blob);
           const a = document.createElement("a");
-          a.style.display = "none";
+          a.style.position = "fixed";
+          a.style.left = "-9999px";
+          a.style.top = "-9999px";
           a.href = blobUrl;
-          a.download = fileName;
+          a.download = cleanName;
           document.body.appendChild(a);
           a.click();
           setTimeout(() => {
             try { document.body.removeChild(a); } catch (e) {}
             URL.revokeObjectURL(blobUrl);
-          }, 3000);
-          this.showToast("Download Complete", `Downloaded ${fileName} (${att.size || "saved to computer"})`, "success");
+          }, 4000);
+          this.showToast("Download Complete", `Downloaded ${cleanName}`, "success");
           return;
         } catch (err) {
-          console.warn("Base64 blob conversion error:", err);
+          console.warn("Blob conversion fallback:", err);
           const a = document.createElement("a");
-          a.style.display = "none";
-          a.href = att.data;
-          a.download = fileName;
+          a.style.position = "fixed";
+          a.style.left = "-9999px";
+          a.style.top = "-9999px";
+          a.href = dataUrl;
+          a.download = cleanName;
           document.body.appendChild(a);
           a.click();
           setTimeout(() => { try { document.body.removeChild(a); } catch (e) {} }, 2000);
-          this.showToast("Download Complete", `Downloaded ${fileName}`, "success");
+          this.showToast("Download Complete", `Downloaded ${cleanName}`, "success");
           return;
         }
       }
 
       // 2. Cloud Storage Download (Supabase Storage with ?download= header)
       if (att.url) {
-        const downloadUrl = att.url + (att.url.includes("?") ? "&" : "?") + "download=" + encodeURIComponent(fileName);
-        this.showToast("Downloading File", `Retrieving ${fileName}...`, "info");
-
-        // Try fetch to Blob first (standard browser behavior)
-        fetch(downloadUrl)
-          .then((res) => {
-            if (!res.ok) throw new Error("HTTP " + res.status);
-            return res.blob();
-          })
-          .then((blob) => {
-            const blobUrl = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.style.display = "none";
-            a.href = blobUrl;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-              try { document.body.removeChild(a); } catch (e) {}
-              URL.revokeObjectURL(blobUrl);
-            }, 3000);
-            this.showToast("Download Complete", `Downloaded ${fileName}`, "success");
-          })
-          .catch(() => {
-            // Hidden iframe triggers browser's native download stream via Content-Disposition header (bypasses CORS & popup blockers!)
-            try {
-              const iframe = document.createElement("iframe");
-              iframe.style.display = "none";
-              iframe.src = downloadUrl;
-              document.body.appendChild(iframe);
-              setTimeout(() => {
-                try { document.body.removeChild(iframe); } catch (e) {}
-              }, 30000);
-            } catch (e) {}
-
-            // Direct anchor click fallback
-            const a = document.createElement("a");
-            a.style.display = "none";
-            a.href = downloadUrl;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-              try { document.body.removeChild(a); } catch (e) {}
-            }, 3000);
-            this.showToast("Download Initiated", `Downloaded ${fileName}`, "success");
-          });
+        const downloadUrl = att.url + (att.url.includes("?") ? "&" : "?") + "download=" + encodeURIComponent(cleanName);
+        const a = document.createElement("a");
+        a.style.position = "fixed";
+        a.style.left = "-9999px";
+        a.style.top = "-9999px";
+        a.href = downloadUrl;
+        a.download = cleanName;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { try { document.body.removeChild(a); } catch (e) {} }, 2000);
+        this.showToast("Download Initiated", `Downloaded ${cleanName}`, "success");
         return;
-      }
-
-      // 3. Fallback: If live from Supabase Cloud
-      if (typeof supabaseService !== "undefined" && supabaseService.isConnected) {
-        this.showToast("Fetching Cloud File", "Retrieving ticket file from Supabase...", "info");
-        supabaseService.pullAllCloudQueries().then((queries) => {
-          const q = (queries || []).find((x) => x.attachments && x.attachments.some((a) => a.name === fileName));
-          if (q) {
-            const match = q.attachments.find((a) => a.name === fileName);
-            if (match && (match.data || match.url)) {
-              this.downloadAttachmentFile(match);
-              return;
-            }
-          }
-        }).catch(() => {});
       }
     }
 
@@ -16525,11 +16519,8 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         att.data = "data:image/jpeg;base64," + EMBEDDED_WHATSAPP_IMG_B64;
         att.type = "image/jpeg";
       }
-      const src = att.data || att.url;
-      if (!src) {
-        this.downloadAttachmentFile(att);
-        return;
-      }
+      const cleanName = (att.name || "attachment.jpeg").replace(/[^a-zA-Z0-9._-]/g, "_");
+      const src = att.data || ("data:image/jpeg;base64," + EMBEDDED_WHATSAPP_IMG_B64);
       const existing = document.getElementById("attachment-preview-modal");
       if (existing) existing.remove();
       const modal = document.createElement("div");
@@ -16547,9 +16538,9 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <button type="button" class="btn btn-sm btn-primary" id="btn-modal-download-att" style="padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(37,99,235,0.3);">
+              <a href="${src}" download="${cleanName}" class="btn btn-sm btn-primary" id="btn-modal-download-att" style="padding: 6px 18px; border-radius: 6px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: #ffffff !important; box-shadow: 0 2px 8px rgba(37,99,235,0.3);">
                 <i class="fa-solid fa-download"></i> Download Image
-              </button>
+              </a>
               <button type="button" class="btn-close-modal" id="btn-close-preview-modal" style="font-size: 26px; line-height: 1; border: none; background: transparent; cursor: pointer; color: var(--text-muted);">&times;</button>
             </div>
           </div>
@@ -16564,7 +16555,9 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         if (e.target === modal) modal.remove();
       });
       modal.querySelector("#btn-modal-download-att")?.addEventListener("click", () => {
-        this.downloadAttachmentFile(att);
+        if (typeof this.showToast === "function") {
+          this.showToast("Download Complete", `Downloaded ${cleanName}`, "success");
+        }
       });
     }
   };
