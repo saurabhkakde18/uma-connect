@@ -1,0 +1,47 @@
+================================================================================
+                    UMA CONNECT - DUAL ENTERPRISE PORTAL
+                 UMA STEEL ALLOYS & OMSAIRAM STEELS & ALLOYS
+================================================================================
+
+This package contains everything needed to run and install UMA Connect on any
+computer or mobile phone. All instances connect to the centralized cloud database
+in real-time!
+
+--------------------------------------------------------------------------------
+1. FOR ANDROID PHONES (Plant Supervisors, Field Engineers, Operators)
+--------------------------------------------------------------------------------
+- File to share: "UMA Connect.apk"
+- How to install:
+  1. Send "UMA Connect.apk" to the phone via WhatsApp, Telegram, or Email.
+  2. Tap the APK file on the phone.
+  3. Select "Install" (enable "Install from unknown sources" if prompted).
+  4. Launch "UMA Connect" from the phone's app drawer.
+
+--------------------------------------------------------------------------------
+2. FOR WINDOWS COMPUTERS / LAPTOPS (Accountants, Managers, Admin Staff)
+--------------------------------------------------------------------------------
+- File to share: "UMA_Connect_Setup.exe"
+- How to install:
+  1. Double-click "UMA_Connect_Setup.exe".
+  2. Click "Install".
+  3. A desktop shortcut with the official UMA logo will be created automatically.
+  4. Launch UMA Connect directly from the desktop icon!
+
+- Alternative Portable Version:
+  - Simply open "index.html" in Google Chrome, Microsoft Edge, or any web browser!
+
+--------------------------------------------------------------------------------
+3. DEFAULT LOGIN CREDENTIALS
+--------------------------------------------------------------------------------
+A) Administrator Access:
+   - Username: admin
+   - Password: admin123 (or admin)
+   - Access: Full System Control, User Management, Reports & Analytics
+
+B) Plant User Access:
+   - Username: mangesh
+   - Password: 9797
+   - Access: Plant Operations & Query Portal
+
+* Note: Passwords must be typed manually on the login screen.
+================================================================================

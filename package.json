@@ -1,0 +1,15 @@
+{
+  "name": "uma-connect",
+  "version": "2.0.0",
+  "description": "UMA Connect - Enterprise Operations & Query Management Portal with Glossy Glass Themes",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "UMA Steel Alloys and Power Limited",
+  "license": "PROPRIETARY",
+  "devDependencies": {
+    "electron": "^31.0.0"
+  }
+}
+
