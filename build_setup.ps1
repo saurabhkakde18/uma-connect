@@ -1,0 +1,78 @@
+$ErrorActionPreference = "Stop"
+
+Write-Host "1. Updating app_payload.zip..."
+if (Test-Path "app_payload.zip") {
+    Remove-Item -Force "app_payload.zip"
+}
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$zip = [System.IO.Compression.ZipFile]::Open("app_payload.zip", [System.IO.Compression.ZipArchiveMode]::Create)
+$files = @(
+    "index.html",
+    "UMA Connect.exe",
+    "Uninstall.exe",
+    "app_icon.ico",
+    "app_icon.png",
+    "favicon.ico",
+    "favicon.png",
+    "apple-touch-icon.png",
+    "manifest.json"
+)
+foreach ($f in $files) {
+    if (Test-Path $f) {
+        [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, (Resolve-Path $f), $f, [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+        Write-Host "  Added $f"
+    }
+}
+$zip.Dispose()
+Write-Host "app_payload.zip updated successfully!"
+
+Write-Host "2. Compiling UMA_Connect_Setup.exe..."
+$csc = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+if (Test-Path $csc) {
+    & $csc /target:winexe /out:UMA_Connect_Setup.exe /win32icon:app_icon.ico /resource:app_payload.zip /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll Installer.cs
+    Write-Host "UMA_Connect_Setup.exe compiled successfully!"
+}
+
+Write-Host "3. Updating APK assets..."
+# Update index.html inside the APKs if zip manipulation allows
+foreach ($apk in @("UMA Connect.apk", "UMA_Connect.apk", "UMA_Connect_Fresh.apk")) {
+    if (Test-Path $apk) {
+        try {
+            $apkZip = [System.IO.Compression.ZipFile]::Open($apk, [System.IO.Compression.ZipArchiveMode]::Update)
+            $entry = $apkZip.GetEntry("assets/index.html")
+            if ($entry) {
+                $entry.Delete()
+            }
+            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($apkZip, (Resolve-Path "index.html"), "assets/index.html", [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+            $apkZip.Dispose()
+            Write-Host "  Updated assets/index.html in $apk"
+        } catch {
+            Write-Host "  Could not update ${apk}"
+        }
+    }
+}
+
+Write-Host "4. Packaging UMA_Connect_Share_Package.zip..."
+if (Test-Path "UMA_Connect_Share_Package.zip") {
+    Remove-Item -Force "UMA_Connect_Share_Package.zip"
+}
+$shareZip = [System.IO.Compression.ZipFile]::Open("UMA_Connect_Share_Package.zip", [System.IO.Compression.ZipArchiveMode]::Create)
+$shareFiles = @(
+    "UMA_Connect_Setup.exe",
+    "UMA Connect.apk",
+    "index.html",
+    "HOW_TO_USE.txt",
+    "app_icon.ico",
+    "favicon.ico",
+    "favicon.png",
+    "apple-touch-icon.png"
+)
+foreach ($sf in $shareFiles) {
+    if (Test-Path $sf) {
+        [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($shareZip, (Resolve-Path $sf), $sf, [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+        Write-Host "  Added $sf to share package"
+    }
+}
+$shareZip.Dispose()
+Write-Host "UMA_Connect_Share_Package.zip built successfully!"

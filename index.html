@@ -7627,20 +7627,23 @@ body.lh-erp-body {
         this.notifyStatus({ isConnected: true, isConfigured: true, isSyncing: false, url: config.url, message: "Auto-Save Active (Connected to Supabase)" });
         this.subscribeToRealtime();
 
-        // Immediately pull remote users and queries from Supabase on connect
-        this.pullAllUsers().then((remoteUsers) => {
+        // Immediately pull remote users and queries from Supabase on connect (await to ensure state is hydrated)
+        try {
+          const [remoteUsers, remoteQueries] = await Promise.all([
+            this.pullAllUsers(),
+            this.pullAllCloudQueries()
+          ]);
           if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
             remoteUsers.forEach((u) => state.mergeRemoteUser(u));
             console.log(`[Supabase] Startup sync: loaded ${remoteUsers.length} users into app!`);
           }
-        }).catch((e) => console.warn("[Supabase] Startup users sync notice:", e));
-
-        this.pullAllCloudQueries().then((remoteQueries) => {
           if (Array.isArray(remoteQueries) && remoteQueries.length > 0) {
             state.mergeRemoteQueries(remoteQueries);
             console.log(`[Supabase] Startup sync: loaded ${remoteQueries.length} tickets into app!`);
           }
-        }).catch((e) => console.warn("[Supabase] Startup queries sync notice:", e));
+        } catch (pullErr) {
+          console.warn("[Supabase] Initial pull notice:", pullErr);
+        }
 
         this.ensureBucketExists().then(() => {
           this.autoSaveDatabaseBackupToStorage();
@@ -7663,20 +7666,31 @@ body.lh-erp-body {
         this.autoSyncAll().catch((e) => console.warn("[Supabase Auto-Sync] Initial sync:", e.message));
       }, 1000);
 
-      // 2. Auto-sync on network reconnection
+      // 2. Auto-sync on network reconnection & window focus
       if (typeof window !== "undefined") {
         window.addEventListener("online", () => {
           console.log("[Supabase Auto-Sync] Device back online, running auto-sync...");
           this.autoSyncAll().catch((e) => console.warn(e));
         });
+        window.addEventListener("focus", () => {
+          if (this.isConnected) {
+            this.pullAllCloudQueries().then((queries) => {
+              if (Array.isArray(queries) && queries.length > 0) state.mergeRemoteQueries(queries);
+            }).catch(() => {});
+          }
+        });
       }
 
-      // 3. Periodic background sync heartbeat every 30 seconds
+      // 3. Periodic background sync heartbeat every 10 seconds for real-time ticket triage
       this.heartbeatInterval = setInterval(() => {
         if (this.isConnected && !this.isSyncing) {
-          this.autoSyncAll().catch((e) => console.warn("[Supabase Auto-Sync] Heartbeat:", e.message));
+          this.pullAllCloudQueries().then((queries) => {
+            if (Array.isArray(queries) && queries.length > 0) {
+              state.mergeRemoteQueries(queries);
+            }
+          }).catch(() => {});
         }
-      }, 30000);
+      }, 10000);
     }
 
     triggerDebouncedAutoSync() {
@@ -7796,17 +7810,20 @@ body.lh-erp-body {
         id: r.id,
         title: r.title || "",
         description: r.description || "",
+        remark: r.description || "",
         companyId: r.company_id || "",
         companyName: r.company_name || "",
         module: r.module || "",
         moduleCode: r.module_code || "",
         department: r.department || "",
         raisedBy: r.raised_by || "",
+        raisedById: r.raised_by_username || r.raised_by || "",
+        raisedByUsername: r.raised_by_username || r.raised_by || "",
         raisedByEmail: r.raised_by_email || "",
-        raisedByUsername: r.raised_by_username || "",
         assignedTo: r.assigned_to || "",
+        assignedToId: r.assigned_to_username || "admin",
+        assignedToUsername: r.assigned_to_username || "admin",
         assignedToEmail: r.assigned_to_email || "",
-        assignedToUsername: r.assigned_to_username || "",
         priority: r.priority || "Medium",
         status: r.status || "Open",
         createdAt: r.created_at || new Date().toISOString(),
@@ -9653,12 +9670,35 @@ body.lh-erp-body {
       }
     },
     bindEvents(container) {
-      container.querySelector("#btn-dash-refresh")?.addEventListener("click", () => {
+      container.querySelector("#btn-dash-refresh")?.addEventListener("click", async () => {
         const icon = container.querySelector("#icon-dash-refresh");
         icon?.classList.add("fa-spin");
-        setTimeout(() => {
+        try {
+          if (!supabaseService.isConnected && supabaseService.isConfigured()) {
+            await supabaseService.init();
+          }
+          if (supabaseService.isConnected) {
+            const remoteQueries = await supabaseService.pullAllCloudQueries();
+            if (Array.isArray(remoteQueries) && remoteQueries.length > 0) {
+              state.mergeRemoteQueries(remoteQueries);
+            }
+            const remoteUsers = await supabaseService.pullAllUsers();
+            if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
+              remoteUsers.forEach((u) => state.mergeRemoteUser(u));
+            }
+            if (typeof app !== "undefined" && app.showToast) {
+              app.showToast("Cloud Synced", `Refreshed from Supabase! ${remoteQueries.length} tickets synchronized.`, "success");
+            }
+          }
+        } catch (err) {
+          console.warn("[Dashboard Refresh]", err);
+          if (typeof app !== "undefined" && app.showToast) {
+            app.showToast("Sync Error", err.message, "danger");
+          }
+        } finally {
+          icon?.classList.remove("fa-spin");
           this.render();
-        }, 300);
+        }
       });
       container.querySelector("#btn-dash-new-query")?.addEventListener("click", () => {
         window.dispatchEvent(new CustomEvent("navigate", { detail: "new-query" }));
@@ -10075,6 +10115,9 @@ body.lh-erp-body {
           <p class="page-subtitle">${pageSubtitle}</p>
         </div>
         <div class="header-actions">
+          <button id="btn-queries-cloud-refresh" class="btn btn-outline shadow-sm" title="Refresh Latest Tickets from Supabase Cloud">
+            <i class="fa-solid fa-arrows-rotate text-primary" id="icon-queries-refresh"></i> Refresh Cloud
+          </button>
           <button id="btn-list-new-query" class="btn btn-primary shadow-glow">
             <i class="fa-solid fa-plus-circle"></i> + New Query
           </button>
@@ -10409,6 +10452,31 @@ body.lh-erp-body {
       this.bindTableEvents(tableContainer);
     },
     bindEvents(container) {
+      container.querySelector("#btn-queries-cloud-refresh")?.addEventListener("click", async () => {
+        const icon = container.querySelector("#icon-queries-refresh");
+        icon?.classList.add("fa-spin");
+        try {
+          if (!supabaseService.isConnected && supabaseService.isConfigured()) {
+            await supabaseService.init();
+          }
+          if (supabaseService.isConnected) {
+            const remote = await supabaseService.pullAllCloudQueries();
+            if (Array.isArray(remote) && remote.length > 0) {
+              state.mergeRemoteQueries(remote);
+            }
+            if (typeof app !== "undefined" && app.showToast) {
+              app.showToast("Cloud Sync", `Loaded ${remote.length} queries from Supabase!`, "success");
+            }
+          }
+        } catch (e) {
+          if (typeof app !== "undefined" && app.showToast) {
+            app.showToast("Sync Error", e.message, "danger");
+          }
+        } finally {
+          icon?.classList.remove("fa-spin");
+          this.renderTable();
+        }
+      });
       container.querySelector("#btn-list-new-query")?.addEventListener("click", () => {
         window.dispatchEvent(new CustomEvent("navigate", { detail: "new-query" }));
       });
@@ -14709,6 +14777,10 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         });
         if (res.success) {
           console.log("[Supabase] Connected automatically on launch!");
+          if (auth.isLoggedIn()) {
+            this.refreshCurrentView();
+            notifications.renderBell();
+          }
         }
       }).catch((err) => console.warn("[Supabase] Auto-init error:", err));
       pwaInstall.init();
@@ -14848,6 +14920,10 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         });
         if (res.success) {
           console.log("[Supabase] Connected automatically on launch!");
+          if (auth.isLoggedIn()) {
+            this.refreshCurrentView();
+            notifications.renderBell();
+          }
         }
       }).catch((err) => console.warn("[Supabase] Auto-init error:", err));
     }
@@ -14902,6 +14978,26 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         this.showToast("Signed In Successfully", `Welcome, ${res.user.name} (${res.user.role})!`, "success");
         this.checkAuthAndRenderLogin();
         this.renderHeaderAndSidebar();
+
+        // Immediately pull latest tickets and users from Supabase Cloud on sign in
+        try {
+          if (!supabaseService.isConnected && supabaseService.isConfigured()) {
+            await supabaseService.init();
+          }
+          if (supabaseService.isConnected) {
+            const remoteQueries = await supabaseService.pullAllCloudQueries();
+            if (Array.isArray(remoteQueries) && remoteQueries.length > 0) {
+              state.mergeRemoteQueries(remoteQueries);
+            }
+            const remoteUsers = await supabaseService.pullAllUsers();
+            if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
+              remoteUsers.forEach((u) => state.mergeRemoteUser(u));
+            }
+          }
+        } catch (syncErr) {
+          console.warn("[Login Cloud Pull Notice]", syncErr);
+        }
+
         const initialView = auth.isAdmin() ? "dashboard" : "new-query";
         this.navigateTo(initialView);
       } else {
@@ -15752,6 +15848,16 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
       this.updateMobileBottomNav(view);
       document.querySelectorAll(".view-panel").forEach((panel) => panel.classList.add("hidden"));
       window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // Background pull from Supabase Cloud on navigation to views that display queries
+      if (supabaseService.isConnected && ["dashboard", "all-queries", "my-queries", "assigned-to-me", "resolved", "kanban", "reports"].includes(view)) {
+        supabaseService.pullAllCloudQueries().then((remoteQueries) => {
+          if (Array.isArray(remoteQueries) && remoteQueries.length > 0) {
+            state.mergeRemoteQueries(remoteQueries);
+          }
+        }).catch(() => {});
+      }
+
       switch (view) {
         case "dashboard":
           document.getElementById("view-dashboard")?.classList.remove("hidden");
@@ -16020,6 +16126,17 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
       });
       document.getElementById("btn-cancel-reopen")?.addEventListener("click", () => {
         document.getElementById("reopen-query-modal")?.classList.add("hidden");
+      });
+
+      // Auto-pull latest tickets from Supabase Cloud whenever Admin focuses this window/tab
+      window.addEventListener("focus", () => {
+        if (supabaseService.isConnected && auth.isLoggedIn()) {
+          supabaseService.pullAllCloudQueries().then((queries) => {
+            if (Array.isArray(queries) && queries.length > 0) {
+              state.mergeRemoteQueries(queries);
+            }
+          }).catch(() => {});
+        }
       });
     }
     showToast(title, message, type = "info") {
