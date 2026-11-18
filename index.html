@@ -7716,11 +7716,12 @@ body.lh-erp-body {
         this.notifyStatus({ isConnected: true, isConfigured: true, isSyncing: false, url: config.url, message: "Auto-Save Active (Connected to Supabase)" });
         this.subscribeToRealtime();
 
-        // Immediately pull remote users and queries from Supabase on connect (await to ensure state is hydrated)
+        // Immediately pull remote users, queries, and team chat from Supabase on connect
         try {
-          const [remoteUsers, remoteQueries] = await Promise.all([
+          const [remoteUsers, remoteQueries, remoteChats] = await Promise.all([
             this.pullAllUsers(),
-            this.pullAllCloudQueries()
+            this.pullAllCloudQueries(),
+            this.pullAllChatMessages()
           ]);
           if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
             remoteUsers.forEach((u) => state.mergeRemoteUser(u));
@@ -7729,6 +7730,10 @@ body.lh-erp-body {
           if (Array.isArray(remoteQueries) && remoteQueries.length > 0) {
             state.mergeRemoteQueries(remoteQueries);
             console.log(`[Supabase] Startup sync: loaded ${remoteQueries.length} tickets into app!`);
+          }
+          if (Array.isArray(remoteChats) && remoteChats.length > 0) {
+            state.mergeRemoteChatMessages(remoteChats);
+            console.log(`[Supabase] Startup sync: loaded ${remoteChats.length} chat messages into app!`);
           }
         } catch (pullErr) {
           console.warn("[Supabase] Initial pull notice:", pullErr);
@@ -7766,11 +7771,14 @@ body.lh-erp-body {
             this.pullAllCloudQueries().then((queries) => {
               if (Array.isArray(queries) && queries.length > 0) state.mergeRemoteQueries(queries);
             }).catch(() => {});
+            this.pullAllChatMessages().then((msgs) => {
+              if (Array.isArray(msgs) && msgs.length > 0) state.mergeRemoteChatMessages(msgs);
+            }).catch(() => {});
           }
         });
       }
 
-      // 3. Periodic background sync heartbeat every 10 seconds for real-time ticket triage
+      // 3. Periodic background sync heartbeat every 6 seconds for live tickets & team chat
       this.heartbeatInterval = setInterval(() => {
         if (this.isConnected && !this.isSyncing) {
           this.pullAllCloudQueries().then((queries) => {
@@ -7778,8 +7786,13 @@ body.lh-erp-body {
               state.mergeRemoteQueries(queries);
             }
           }).catch(() => {});
+          this.pullAllChatMessages().then((msgs) => {
+            if (Array.isArray(msgs) && msgs.length > 0) {
+              state.mergeRemoteChatMessages(msgs);
+            }
+          }).catch(() => {});
         }
-      }, 10000);
+      }, 6000);
     }
 
     triggerDebouncedAutoSync() {
@@ -8257,15 +8270,74 @@ body.lh-erp-body {
       };
     }
 
+    // --- Team Chat Mappings & Cloud Sync ---
+    toRemoteChatMessage(m) {
+      return {
+        id: m.id || `MSG-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        channel: m.channel || "general-ops",
+        sender_id: m.senderId || "admin",
+        sender_name: m.senderName || "System Administrator",
+        sender_role: m.senderRole || "User",
+        sender_initials: m.senderInitials || "U",
+        company_name: m.companyName || "Group HQ",
+        text: m.text || "",
+        timestamp: m.timestamp || new Date().toISOString()
+      };
+    }
+
+    toLocalChatMessage(r) {
+      return {
+        id: r.id,
+        channel: r.channel || "general-ops",
+        senderId: r.sender_id || "admin",
+        senderName: r.sender_name || "User",
+        senderRole: r.sender_role || "User",
+        senderInitials: r.sender_initials || "U",
+        companyName: r.company_name || "Group HQ",
+        text: r.text || "",
+        timestamp: r.timestamp || new Date().toISOString()
+      };
+    }
+
+    async syncChatMessage(msg) {
+      if (!msg || !msg.text) return;
+      try {
+        if (!this.client && this.isConfigured()) {
+          await this.init();
+        }
+        if (!this.client) return;
+        const payload = this.toRemoteChatMessage(msg);
+        const { error } = await this.client.from("team_chat").upsert(payload);
+        if (error) console.warn("[Supabase Chat] Upsert warning:", error.message);
+      } catch (err) {
+        console.warn("[Supabase Chat] Sync error:", err.message);
+      }
+    }
+
+    async pullAllChatMessages() {
+      if (!this.client) return [];
+      try {
+        const { data, error } = await this.client.from("team_chat").select("*");
+        if (error) {
+          console.warn("[Supabase Chat] Pull warning:", error.message);
+          return [];
+        }
+        return (data || []).map((r) => this.toLocalChatMessage(r));
+      } catch (e) {
+        return [];
+      }
+    }
+
     async pullFullDatabase() {
       const remoteQueries = await this.pullAllCloudQueries();
       const remoteUsers = await this.pullAllUsers();
-      return { queries: remoteQueries, users: remoteUsers };
+      const remoteChats = await this.pullAllChatMessages();
+      return { queries: remoteQueries, users: remoteUsers, chats: remoteChats };
     }
 
     // --- Multi-Table Realtime Subscription ---
     subscribeToRealtime() {
-      if (!this.client || this.channel) return;
+      if (!this.client || !this.client.channel || this.channel) return;
       try {
         this.channel = this.client
           .channel("public-db-changes")
@@ -8288,6 +8360,17 @@ body.lh-erp-body {
               if (payload.new && (payload.new.id || payload.new.username)) {
                 const localUser = this.toLocalUser(payload.new);
                 window.dispatchEvent(new CustomEvent("supabaseRemoteUserReceived", { detail: localUser }));
+              }
+            }
+          )
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "team_chat" },
+            (payload) => {
+              console.log("[Supabase] Realtime Team Chat event:", payload.eventType, payload.new);
+              if (payload.new && payload.new.id) {
+                const localMsg = this.toLocalChatMessage(payload.new);
+                window.dispatchEvent(new CustomEvent("supabaseRemoteChatReceived", { detail: localMsg }));
               }
             }
           )
@@ -8488,6 +8571,12 @@ body.lh-erp-body {
           const u = e.detail;
           if (u && (u.id || u.username)) {
             this.mergeRemoteUser(u);
+          }
+        });
+        window.addEventListener("supabaseRemoteChatReceived", (e) => {
+          const msg = e.detail;
+          if (msg && msg.id && msg.text) {
+            this.mergeRemoteChatMessages([msg]);
           }
         });
         if (typeof window !== "undefined" && supabaseService.isConfigured()) {
@@ -9155,29 +9244,53 @@ body.lh-erp-body {
     getChatMessages(channel = "all") {
       try {
         const raw = safeStorage.getItem(STORAGE_KEYS.TEAM_CHAT);
-        const all = raw ? JSON.parse(raw) : SEED_CHAT_MESSAGES;
-        if (channel === "all") return all;
-        return all.filter((m) => m.channel === channel);
+        const all = raw ? JSON.parse(raw) : SEED_CHAT_MESSAGES.map((m) => ({ ...m }));
+        const sorted = Array.isArray(all) ? [...all].sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0)) : [];
+        if (channel === "all") return sorted;
+        return sorted.filter((m) => m.channel === channel);
       } catch {
-        return SEED_CHAT_MESSAGES;
+        return SEED_CHAT_MESSAGES.map((m) => ({ ...m }));
       }
+    }
+    mergeRemoteChatMessages(remoteMessages) {
+      if (!Array.isArray(remoteMessages) || remoteMessages.length === 0) return;
+      const local = this.getChatMessages("all");
+      const map = new Map();
+      local.forEach((m) => { if (m && m.id) map.set(m.id, m); });
+      let changed = false;
+      remoteMessages.forEach((rm) => {
+        if (!rm || !rm.id || !rm.text) return;
+        const prev = map.get(rm.id);
+        if (!prev || prev.text !== rm.text) {
+          map.set(rm.id, rm);
+          changed = true;
+        }
+      });
+      if (!changed) return;
+      const merged = Array.from(map.values()).sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+      safeStorage.setItem(STORAGE_KEYS.TEAM_CHAT, JSON.stringify(merged));
+      this.notify("chatMessagesChanged", merged);
     }
     addChatMessage(msgData) {
       const all = this.getChatMessages("all");
       const user = this.getCurrentUser();
       const newMsg = {
-        id: `MSG-${Date.now()}`,
+        id: `MSG-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
         channel: msgData.channel || "general-ops",
         senderId: user ? user.username || user.id : "admin",
         senderName: user ? user.name : "System Administrator",
         senderRole: user ? user.role : "Super Admin",
-        senderInitials: user ? user.initials || "SA" : "SA",
+        senderInitials: user ? user.initials || (user.name ? user.name.slice(0, 2).toUpperCase() : "U") : "SA",
         companyName: user && user.companyId === "COMP-UMA" ? "UMA Steel" : user && user.companyId === "COMP-OMSAI" ? "Omsairam" : "Group HQ",
-        text: msgData.text.trim(),
+        text: String(msgData.text || "").trim(),
         timestamp: (/* @__PURE__ */ new Date()).toISOString()
       };
+      if (!newMsg.text) return null;
       all.push(newMsg);
       safeStorage.setItem(STORAGE_KEYS.TEAM_CHAT, JSON.stringify(all));
+      if (typeof supabaseService !== "undefined" && supabaseService.syncChatMessage) {
+        supabaseService.syncChatMessage(newMsg);
+      }
       this.notify("chatMessagesChanged", all);
       return newMsg;
     }
@@ -9228,6 +9341,8 @@ body.lh-erp-body {
         state.notify("queriesChanged", state.getAllRawQueries());
       } else if (e.key === STORAGE_KEYS.USERS) {
         state.notify("usersChanged", state.getUsers());
+      } else if (e.key === STORAGE_KEYS.TEAM_CHAT) {
+        state.notify("chatMessagesChanged", state.getChatMessages("all"));
       }
     });
   }
@@ -14096,12 +14211,25 @@ This will remove their system access immediately.`);
       }
     },
     bindTopEvents(container) {
-      container.querySelector("#btn-collab-refresh")?.addEventListener("click", () => {
+      container.querySelector("#btn-collab-refresh")?.addEventListener("click", async () => {
         const icon = container.querySelector("#icon-collab-refresh");
         icon?.classList.add("fa-spin");
+        try {
+          if (typeof supabaseService !== "undefined" && supabaseService.isConfigured()) {
+            if (!supabaseService.client) await supabaseService.init();
+            if (this.currentTab === "chat") {
+              const msgs = await supabaseService.pullAllChatMessages();
+              if (Array.isArray(msgs) && msgs.length > 0) state.mergeRemoteChatMessages(msgs);
+            } else {
+              const queries = await supabaseService.pullAllCloudQueries();
+              if (Array.isArray(queries) && queries.length > 0) state.mergeRemoteQueries(queries);
+            }
+          }
+        } catch (e) {}
         setTimeout(() => {
+          icon?.classList.remove("fa-spin");
           this.render(this.currentTab);
-        }, 350);
+        }, 250);
       });
       container.querySelector("#btn-collab-new-ticket")?.addEventListener("click", () => {
         window.dispatchEvent(new CustomEvent("navigate", { detail: "new-query" }));
@@ -14399,8 +14527,69 @@ This will remove their system access immediately.`);
       }
     },
     // =========================================================================
-    // 2. TEAM CHAT SUB-VIEW (`team team chating`)
+    // 2. TEAM CHAT SUB-VIEW (`team-chat`) — LIVE SUPABASE REAL-TIME SYNC
     // =========================================================================
+    escapeChatHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    },
+    buildChatMessagesHTML(channelObj, messages, currentUser) {
+      if (!messages || messages.length === 0) {
+        return `
+          <div style="text-align: center; color: #94a3b8; padding: 60px 20px;">
+            <i class="fa-solid fa-comments" style="font-size: 32px; display: block; margin-bottom: 8px; opacity: 0.4;"></i>
+            No messages in #${channelObj.name} yet. Send the first operational update!
+          </div>
+        `;
+      }
+      return messages.map((m) => {
+        const isMe = currentUser && (
+          (m.senderId && currentUser.id && m.senderId.toLowerCase() === String(currentUser.id).toLowerCase()) ||
+          (m.senderId && currentUser.username && m.senderId.toLowerCase() === String(currentUser.username).toLowerCase())
+        );
+        const d = new Date(m.timestamp);
+        const timeStr = isNaN(d.getTime()) ? "" : d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+        const safeText = this.escapeChatHtml(m.text);
+        const safeSender = this.escapeChatHtml(m.senderName || "User");
+        return `
+          <div class="chat-bubble-row" style="display: flex; gap: 12px; ${isMe ? "flex-direction: row-reverse;" : ""}">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: ${isMe ? "linear-gradient(135deg, #1e40af, #3b82f6)" : "linear-gradient(135deg, #475569, #64748b)"}; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0;">
+              ${this.escapeChatHtml(m.senderInitials || "U")}
+            </div>
+            <div style="max-width: 72%; ${isMe ? "text-align: right;" : ""}">
+              <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 3px; display: flex; align-items: center; gap: 6px; ${isMe ? "justify-content: flex-end;" : ""}">
+                <strong style="color: var(--text-primary);">${safeSender}</strong>
+                <span class="badge" style="font-size: 9px; padding: 1px 5px; background: var(--glass-pill-bg); color: var(--text-secondary);">${this.escapeChatHtml(m.companyName || "Group")}</span>
+                <span>${timeStr}</span>
+              </div>
+              <div style="background: ${isMe ? "#2563eb" : "#f1f5f9"}; color: ${isMe ? "#ffffff" : "#0f172a"}; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.45; text-align: left; display: inline-block; word-break: break-word; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                ${safeText}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    },
+    refreshChatMessagesInPlace() {
+      const scrollContainer = document.getElementById("chat-messages-scroll");
+      if (!scrollContainer) return;
+      const channels = [
+        { id: "general-ops", name: "general-operations" },
+        { id: "uma-steel", name: "uma-steel-plant-1" },
+        { id: "omsairam", name: "omsairam-plant-2" },
+        { id: "erp-technical", name: "erp-technical-core" },
+        { id: "incident-alerts", name: "incident-critical" }
+      ];
+      const currentChannelObj = channels.find((c) => c.id === this.currentChannel) || channels[0];
+      const messages = state.getChatMessages(this.currentChannel);
+      const currentUser = auth.getUser();
+      scrollContainer.innerHTML = this.buildChatMessagesHTML(currentChannelObj, messages, currentUser);
+      scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    },
     renderChat(stage) {
       const channels = [
         { id: "general-ops", name: "general-operations", icon: "fa-globe", desc: "Consolidated dual-plant operational updates" },
@@ -14413,8 +14602,9 @@ This will remove their system access immediately.`);
       const messages = state.getChatMessages(this.currentChannel);
       const users = state.getUsers();
       const currentUser = auth.getUser();
+      const allMsgs = state.getChatMessages("all");
       stage.innerHTML = `
-      <div class="team-chat-wrapper animate-fade-in">
+      <div class="team-chat-wrapper">
         
         <!-- LEFT PANE: CHANNELS & ROSTER -->
         <div class="chat-sidebar" style="background: var(--glass-subsurface); border-right: 1px solid var(--glass-border); display: flex; flex-direction: column;">
@@ -14423,34 +14613,38 @@ This will remove their system access immediately.`);
             <div style="font-size: 13px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
               <i class="fa-solid fa-headset text-primary"></i> Live Team Channels
             </div>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Instant team dispatch & coordination</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Real-time cloud synced across all PCs</div>
           </div>
 
           <!-- Channel List -->
           <div style="padding: 12px 8px; flex: 1; overflow-y: auto;">
             <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #94a3b8; padding: 0 10px 6px;">CHANNELS</div>
-            ${channels.map((c) => `
+            ${channels.map((c) => {
+              const chCount = allMsgs.filter((m) => m.channel === c.id).length;
+              return `
               <button type="button" class="chat-channel-btn ${this.currentChannel === c.id ? "active" : ""}" data-channel="${c.id}" style="width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 600; text-align: left; background: ${this.currentChannel === c.id ? "#eff6ff" : "transparent"}; color: ${this.currentChannel === c.id ? "#1e40af" : "#475569"}; border: ${this.currentChannel === c.id ? "1px solid #bfdbfe" : "none"}; cursor: pointer; margin-bottom: 4px; transition: all 0.15s ease;">
                 <i class="fa-solid ${c.icon}" style="font-size: 13px; color: ${this.currentChannel === c.id ? "#2563eb" : "#94a3b8"};"></i>
                 <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">#${c.name}</span>
+                <span style="font-size: 10px; padding: 1px 6px; border-radius: 10px; background: rgba(37,99,235,0.1); color: #2563eb; font-weight: 700;">${chCount}</span>
               </button>
-            `).join("")}
+              `;
+            }).join("")}
 
             <!-- Online Team Presence Roster -->
             <div style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #94a3b8; padding: 18px 10px 8px;">TEAM ROSTER (${users.length})</div>
             ${users.map((u) => `
-              <div style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; font-size: 12px; color: var(--text-secondary);">
+              <button type="button" class="chat-roster-user-btn" data-mention="${this.escapeChatHtml(u.name || u.username)}" title="Click to @mention ${this.escapeChatHtml(u.name || u.username)}" style="width: 100%; border: none; background: transparent; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; font-size: 12px; color: var(--text-secondary);">
                 <div style="position: relative;">
                   <span style="width: 26px; height: 26px; border-radius: 50%; background: var(--glass-divider); color: var(--text-primary); font-weight: 700; font-size: 10px; display: flex; align-items: center; justify-content: center;">
-                    ${u.initials || "U"}
+                    ${this.escapeChatHtml(u.initials || "U")}
                   </span>
                   <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; border: 1.5px solid #fff; position: absolute; bottom: -1px; right: -1px;"></span>
                 </div>
                 <div style="min-width: 0; flex: 1;">
-                  <div style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.name}</div>
-                  <div style="font-size: 10px; color: var(--text-muted);">${u.role}</div>
+                  <div style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.escapeChatHtml(u.name)}</div>
+                  <div style="font-size: 10px; color: var(--text-muted);">${this.escapeChatHtml(u.role)}</div>
                 </div>
-              </div>
+              </button>
             `).join("")}
           </div>
 
@@ -14460,7 +14654,7 @@ This will remove their system access immediately.`);
         <div class="chat-main-stage" style="display: flex; flex-direction: column; background: var(--glass-surface-solid);">
           
           <!-- Channel Header -->
-          <div style="padding: 14px 20px; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; background: var(--glass-surface-solid);">
+          <div style="padding: 14px 20px; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; background: var(--glass-surface-solid);">
             <div>
               <div style="font-size: 15px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
                 <i class="fa-solid ${currentChannelObj.icon} text-primary"></i>
@@ -14468,47 +14662,27 @@ This will remove their system access immediately.`);
               </div>
               <div style="font-size: 11.5px; color: var(--text-muted);">${currentChannelObj.desc}</div>
             </div>
-            <span class="badge" style="background: var(--success-soft); color: #15803d; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 700;">
-              <span class="status-dot-pulse" style="width: 6px; height: 6px; background: #16a34a; display: inline-block; margin-right: 4px;"></span>
-              Active Channel
-            </span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button type="button" id="btn-chat-sync-now" class="btn btn-sm btn-outline" style="padding: 4px 10px; font-size: 11px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;" title="Sync latest messages from cloud">
+                <i class="fa-solid fa-arrows-rotate" id="icon-chat-sync"></i> Sync
+              </button>
+              <span class="badge" style="background: var(--success-soft); color: #15803d; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 700;">
+                <span class="status-dot-pulse" style="width: 6px; height: 6px; background: #16a34a; display: inline-block; margin-right: 4px;"></span>
+                ${typeof supabaseService !== "undefined" && supabaseService.isConnected ? "Live Cloud Sync" : "Active Channel"}
+              </span>
+            </div>
           </div>
 
           <!-- Message History Container -->
-          <div id="chat-messages-scroll" style="flex: 1; padding: 20px; overflow-y: auto; max-height: 440px; display: flex; flex-direction: column; gap: 14px;">
-            ${messages.length === 0 ? `
-              <div style="text-align: center; color: #94a3b8; padding: 60px 20px;">
-                <i class="fa-solid fa-comments" style="font-size: 32px; display: block; margin-bottom: 8px; opacity: 0.4;"></i>
-                No messages in #${currentChannelObj.name} yet. Send the first operational update!
-              </div>
-            ` : messages.map((m) => {
-        const isMe = currentUser && (m.senderId === currentUser.id || m.senderId === currentUser.username);
-        const timeStr = new Date(m.timestamp).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-        return `
-                <div class="chat-bubble-row" style="display: flex; gap: 12px; ${isMe ? "flex-direction: row-reverse;" : ""}">
-                  <div style="width: 36px; height: 36px; border-radius: 50%; background: ${isMe ? "linear-gradient(135deg, #1e40af, #3b82f6)" : "linear-gradient(135deg, #475569, #64748b)"}; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0;">
-                    ${m.senderInitials || "U"}
-                  </div>
-                  <div style="max-width: 70%; ${isMe ? "text-align: right;" : ""}">
-                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 3px; display: flex; align-items: center; gap: 6px; ${isMe ? "justify-content: flex-end;" : ""}">
-                      <strong style="color: var(--text-primary);">${m.senderName}</strong>
-                      <span class="badge" style="font-size: 9px; padding: 1px 5px; background: var(--glass-pill-bg); color: var(--text-secondary);">${m.companyName || "Group"}</span>
-                      <span>${timeStr}</span>
-                    </div>
-                    <div style="background: ${isMe ? "#2563eb" : "#f1f5f9"}; color: ${isMe ? "#ffffff" : "#0f172a"}; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.45; text-align: left; display: inline-block; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                      ${m.text}
-                    </div>
-                  </div>
-                </div>
-              `;
-      }).join("")}
+          <div id="chat-messages-scroll" style="flex: 1; padding: 20px; overflow-y: auto; min-height: 320px; max-height: 460px; display: flex; flex-direction: column; gap: 14px;">
+            ${this.buildChatMessagesHTML(currentChannelObj, messages, currentUser)}
           </div>
 
           <!-- Message Composer Input -->
           <div style="padding: 14px 20px; border-top: 1px solid var(--glass-border); background: var(--glass-subsurface);">
             <form id="form-team-chat" style="display: flex; gap: 10px;">
-              <input type="text" id="chat-text-input" class="form-input" placeholder="Message #${currentChannelObj.name}... (Press Enter to send)" autocomplete="off" required style="flex: 1; height: 42px; border-radius: 8px; font-size: 13px;">
-              <button type="submit" class="btn btn-primary" style="padding: 0 20px; height: 42px; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+              <input type="text" id="chat-text-input" class="form-input" placeholder="Message #${currentChannelObj.name}... (Press Enter to send)" autocomplete="off" style="flex: 1; height: 42px; border-radius: 8px; font-size: 13px;">
+              <button type="submit" id="btn-send-chat-msg" class="btn btn-primary" style="padding: 0 20px; height: 42px; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
                 <span>Send</span>
                 <i class="fa-solid fa-paper-plane"></i>
               </button>
@@ -14520,6 +14694,18 @@ This will remove their system access immediately.`);
       </div>
     `;
       this.bindChatEvents(stage);
+      // Pull latest cloud chat messages immediately on opening Team Chat
+      if (typeof supabaseService !== "undefined" && supabaseService.isConfigured()) {
+        (async () => {
+          try {
+            if (!supabaseService.client) await supabaseService.init();
+            const msgs = await supabaseService.pullAllChatMessages();
+            if (Array.isArray(msgs) && msgs.length > 0) {
+              state.mergeRemoteChatMessages(msgs);
+            }
+          } catch (e) {}
+        })();
+      }
     },
     bindChatEvents(stage) {
       stage.querySelectorAll(".chat-channel-btn").forEach((btn) => {
@@ -14531,22 +14717,55 @@ This will remove their system access immediately.`);
           }
         });
       });
+      stage.querySelectorAll(".chat-roster-user-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const mention = btn.getAttribute("data-mention");
+          const input = stage.querySelector("#chat-text-input");
+          if (mention && input) {
+            const prefix = input.value && !input.value.endsWith(" ") ? " " : "";
+            input.value = `${input.value}${prefix}@${mention} `;
+            input.focus();
+          }
+        });
+      });
+      stage.querySelector("#btn-chat-sync-now")?.addEventListener("click", async () => {
+        const icon = stage.querySelector("#icon-chat-sync");
+        icon?.classList.add("fa-spin");
+        try {
+          if (typeof supabaseService !== "undefined" && supabaseService.isConfigured()) {
+            if (!supabaseService.client) await supabaseService.init();
+            const msgs = await supabaseService.pullAllChatMessages();
+            if (Array.isArray(msgs) && msgs.length > 0) {
+              state.mergeRemoteChatMessages(msgs);
+            }
+          }
+          this.refreshChatMessagesInPlace();
+        } catch (e) {}
+        setTimeout(() => icon?.classList.remove("fa-spin"), 350);
+      });
       const scrollContainer = stage.querySelector("#chat-messages-scroll");
       if (scrollContainer) {
         scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
-      const chatForm = stage.querySelector("#form-team-chat");
-      chatForm?.addEventListener("submit", (e) => {
-        e.preventDefault();
+      const sendMessageNow = () => {
         const input = stage.querySelector("#chat-text-input");
         const val = input ? input.value.trim() : "";
-        if (!val) return;
+        if (!val) {
+          input?.focus();
+          return;
+        }
         state.addChatMessage({
           channel: this.currentChannel,
           text: val
         });
         input.value = "";
-        this.renderChat(stage);
+        this.refreshChatMessagesInPlace();
+        input.focus();
+      };
+      const chatForm = stage.querySelector("#form-team-chat");
+      chatForm?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        sendMessageNow();
       });
     },
     // =========================================================================
@@ -15181,6 +15400,11 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
       state.subscribe("usersChanged", () => {
         if (this.currentView === "users" && typeof userManagement !== "undefined") {
           userManagement.render();
+        }
+      });
+      state.subscribe("chatMessagesChanged", () => {
+        if (auth.isLoggedIn() && typeof collabPanel !== "undefined" && collabPanel.currentTab === "chat" && ["collab", "kanban", "team-chat", "project-files", "team-collab"].includes(this.currentView)) {
+          collabPanel.refreshChatMessagesInPlace();
         }
       });
     }
