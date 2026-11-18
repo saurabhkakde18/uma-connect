@@ -11401,30 +11401,6 @@ body.lh-erp-body {
           { code: "09", desc: "Utilities" }
         ]
       },
-      processName: {
-        title: "Select Business Process",
-        subtitle: "Specific workflow or transaction cycle",
-        items: [
-          { code: "VOUCH-POST", desc: "Daily Voucher Posting & Verification" },
-          { code: "GATE-IN", desc: "Inward Raw Material Weighment" },
-          { code: "EWAY-GEN", desc: "E-Way Bill & E-Invoice Integration" },
-          { code: "INV-VAL", desc: "Monthly Stock Valuation & Reconciliation" },
-          { code: "HEAT-LOG", desc: "Heat-wise Chemical Analysis Logging" },
-          { code: "DISP-ORD", desc: "Dispatch Order & Gate Pass Clearance" },
-          { code: "PO-APPR", desc: "Purchase Order Multi-Level Approval" }
-        ]
-      },
-      menuOption: {
-        title: "Select Menu Option",
-        subtitle: "Sub-activity or UI screen category",
-        items: [
-          { code: "TRANS", desc: "Transaction Entry & Modification" },
-          { code: "REP", desc: "Registers & MIS Reports" },
-          { code: "MAST", desc: "Master Data & Account Setup" },
-          { code: "AUTH", desc: "Approval Workflow & Signoff" },
-          { code: "UTIL", desc: "Data Utility & Voucher Re-indexing" }
-        ]
-      },
       priority: {
         title: "Select Ticket Priority",
         subtitle: "Define urgency and plant operational impact",
@@ -11479,12 +11455,12 @@ body.lh-erp-body {
               <div style="font-size: 12px; color: #2563eb;">This query will be sent directly to the System Administrator. Only the Admin has authority to solve it.</div>
             </div>
           </div>
-          <span style="font-size: 11.5px; font-weight: 700; background: var(--glass-surface-solid); color: var(--accent-text); border: 1px solid var(--accent-border); padding: 5px 12px; border-radius: 20px;">
-            <i class="fa-solid fa-crown text-amber"></i> Assigned To: System Administrator
+          <span id="lh-banner-assigned-badge" style="font-size: 11.5px; font-weight: 700; background: var(--glass-surface-solid); color: var(--accent-text); border: 1px solid var(--accent-border); padding: 5px 12px; border-radius: 20px;">
+            <i class="fa-solid fa-user-check text-primary"></i> Assign To: <span id="lh-banner-assigned-name">Not Selected</span>
           </span>
         </div>
 
-        <!-- CARD 1: Support Ticket Details (Matches Screenshot Exactly) -->
+        <!-- CARD 1: Support Ticket Details -->
         <div class="lh-panel-card lh-ticket-card" id="card-support-ticket">
           <div class="lh-panel-header lh-panel-header-flex">
             <h3 class="lh-panel-title">Support Ticket</h3>
@@ -11494,38 +11470,43 @@ body.lh-erp-body {
           </div>
           
           <div class="lh-panel-body p-4" id="body-support-ticket">
-            <form id="form-lh-support-ticket" class="lh-ticket-form">
+            <form id="form-lh-support-ticket" class="lh-ticket-form" autocomplete="off">
               
               <!-- Row 1: Ticket Type* -->
               <div class="lh-form-row">
                 <label class="lh-form-label" for="tkt-type-code">Ticket Type<span class="lh-req">*</span></label>
                 <div class="lh-form-field-wrap">
                   <div class="lh-input-search-box">
-                    <input type="text" id="tkt-type-code" class="lh-code-input" value="C01" required autocomplete="off">
+                    <input type="text" id="tkt-type-code" class="lh-code-input" value="" placeholder="Select or enter code" required autocomplete="off">
                     <button type="button" class="lh-btn-field-search" data-lookup="ticketType" title="Search Ticket Type">
                       <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
                   </div>
-                  <input type="text" id="tkt-type-desc" class="lh-desc-input" value="ERROR (WORK STOP)" readonly tabindex="-1">
+                  <input type="text" id="tkt-type-desc" class="lh-desc-input" value="" placeholder="Ticket type description" readonly tabindex="-1">
                   <div id="err-tkt-type" class="lh-inline-error">Please enter Ticket Type*</div>
                 </div>
               </div>
 
-              <!-- Row 2: Reported by name / Mobile* -->
+              <!-- Row 2: Reported by name* -->
               <div class="lh-form-row">
                 <label class="lh-form-label" for="tkt-reported-by-name">Reported by name<span class="lh-req">*</span></label>
                 <div class="lh-form-field-wrap">
-                  <input type="text" id="tkt-reported-by-name" class="lh-full-input" value="${user.name}" placeholder="Enter reporter name or contact" required>
+                  <input type="text" id="tkt-reported-by-name" class="lh-full-input" value="" placeholder="Enter reporter name or contact" required autocomplete="off">
                   <div id="err-tkt-reported-by-name" class="lh-inline-error">Please enter Reported by name*</div>
                 </div>
               </div>
 
-              <!-- Row 3: Req. Reported By/Owner* -->
+              <!-- Row 3: Assign To* (Replaces Req. Reported By/Owner*) -->
               <div class="lh-form-row">
-                <label class="lh-form-label" for="tkt-owner">Req. Reported By/Owner<span class="lh-req">*</span></label>
+                <label class="lh-form-label" for="tkt-assign-to">Assign To<span class="lh-req">*</span></label>
                 <div class="lh-form-field-wrap">
-                  <input type="text" id="tkt-owner" class="lh-full-input" value="${user.name}" placeholder="Reporter full name" required>
-                  <div id="err-tkt-owner" class="lh-inline-error">Please enter Req. Reported By/Owner*</div>
+                  <div class="lh-input-search-box" style="flex: 1; max-width: 100%;">
+                    <input type="text" id="tkt-assign-to" class="lh-full-input" value="" placeholder="Select or enter assignee name" required autocomplete="off">
+                    <button type="button" class="lh-btn-field-search" data-lookup="assignTo" title="Search Registered Users to Assign">
+                      <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                  </div>
+                  <div id="err-tkt-assign-to" class="lh-inline-error">Please enter Assign To*</div>
                 </div>
               </div>
 
@@ -11533,7 +11514,7 @@ body.lh-erp-body {
               <div class="lh-form-row">
                 <label class="lh-form-label" for="tkt-username">Reported By (User ID)</label>
                 <div class="lh-form-field-wrap">
-                  <input type="text" id="tkt-username" class="lh-full-input" value="${user.username || user.id || user.name}" readonly style="background: var(--glass-pill-bg); font-weight: 700; color: var(--accent-text); font-family: var(--font-mono);">
+                  <input type="text" id="tkt-username" class="lh-full-input" value="" placeholder="Enter User ID" autocomplete="off">
                 </div>
               </div>
 
@@ -11542,12 +11523,12 @@ body.lh-erp-body {
                 <label class="lh-form-label" for="tkt-solution-code">Solution<span class="lh-req">*</span></label>
                 <div class="lh-form-field-wrap">
                   <div class="lh-input-search-box">
-                    <input type="text" id="tkt-solution-code" class="lh-code-input" value="MSG-FULLUSE" required autocomplete="off">
+                    <input type="text" id="tkt-solution-code" class="lh-code-input" value="" placeholder="Select or enter code" required autocomplete="off">
                     <button type="button" class="lh-btn-field-search" data-lookup="solution" title="Search Solution">
                       <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
                   </div>
-                  <input type="text" id="tkt-solution-desc" class="lh-desc-input" value="ERP" readonly tabindex="-1">
+                  <input type="text" id="tkt-solution-desc" class="lh-desc-input" value="" placeholder="Solution description" readonly tabindex="-1">
                   <div id="err-tkt-solution" class="lh-inline-error">Please enter Solution*</div>
                 </div>
               </div>
@@ -11557,49 +11538,21 @@ body.lh-erp-body {
                 <label class="lh-form-label" for="tkt-module-code">Menu Module</label>
                 <div class="lh-form-field-wrap">
                   <div class="lh-input-search-box">
-                    <input type="text" id="tkt-module-code" class="lh-code-input" value="01" autocomplete="off">
+                    <input type="text" id="tkt-module-code" class="lh-code-input" value="" placeholder="Select or enter code" autocomplete="off">
                     <button type="button" class="lh-btn-field-search" data-lookup="menuModule" title="Search Menu Module">
                       <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
                   </div>
-                  <input type="text" id="tkt-module-desc" class="lh-desc-input" value="Master Management" readonly tabindex="-1">
+                  <input type="text" id="tkt-module-desc" class="lh-desc-input" value="" placeholder="Module description" readonly tabindex="-1">
                 </div>
               </div>
 
-              <!-- Row 7: Process Name -->
-              <div class="lh-form-row">
-                <label class="lh-form-label" for="tkt-process-code">Process Name</label>
-                <div class="lh-form-field-wrap">
-                  <div class="lh-input-search-box">
-                    <input type="text" id="tkt-process-code" class="lh-code-input" value="VOUCH-POST" autocomplete="off">
-                    <button type="button" class="lh-btn-field-search" data-lookup="processName" title="Search Business Process">
-                      <i class="fa-solid fa-magnifying-glass"></i>
-                    </button>
-                  </div>
-                  <input type="text" id="tkt-process-desc" class="lh-desc-input" value="Daily Voucher Posting & Verification" readonly tabindex="-1">
-                </div>
-              </div>
-
-              <!-- Row 8: Menu Option -->
-              <div class="lh-form-row">
-                <label class="lh-form-label" for="tkt-menu-opt-code">Menu Option</label>
-                <div class="lh-form-field-wrap">
-                  <div class="lh-input-search-box">
-                    <input type="text" id="tkt-menu-opt-code" class="lh-code-input" value="TRANS" autocomplete="off">
-                    <button type="button" class="lh-btn-field-search" data-lookup="menuOption" title="Search Menu Option">
-                      <i class="fa-solid fa-magnifying-glass"></i>
-                    </button>
-                  </div>
-                  <input type="text" id="tkt-menu-opt-desc" class="lh-desc-input" value="Transaction Entry & Modification" readonly tabindex="-1">
-                </div>
-              </div>
-
-              <!-- Row 9: Priority* -->
+              <!-- Row 7: Priority* -->
               <div class="lh-form-row">
                 <label class="lh-form-label" for="tkt-priority-val">Priority<span class="lh-req">*</span></label>
                 <div class="lh-form-field-wrap">
                   <div class="lh-input-search-box" style="flex: 1; max-width: 100%;">
-                    <input type="text" id="tkt-priority-val" class="lh-full-input" value="High" required autocomplete="off">
+                    <input type="text" id="tkt-priority-val" class="lh-full-input" value="" placeholder="Select or enter priority" required autocomplete="off">
                     <button type="button" class="lh-btn-field-search" data-lookup="priority" title="Select Priority">
                       <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
@@ -11608,7 +11561,7 @@ body.lh-erp-body {
                 </div>
               </div>
 
-              <!-- Row 10: Remark* -->
+              <!-- Row 8: Remark* -->
               <div class="lh-form-row lh-form-row-top">
                 <label class="lh-form-label" for="tkt-remark">Remark<span class="lh-req">*</span></label>
                 <div class="lh-form-field-wrap lh-textarea-wrap">
@@ -11717,24 +11670,31 @@ body.lh-erp-body {
           const val = codeEl.value.trim().toUpperCase();
           const catalog = this.lookupData[lookupKey];
           if (!catalog) return;
+          if (!val) {
+            if (descEl) descEl.value = "";
+            return;
+          }
           const match = catalog.items.find(
             (it) => it.code.toUpperCase() === val || val === "ERROR" && it.code === "ERR" || it.desc.toUpperCase().startsWith(val)
           );
           if (match && descEl) {
             descEl.value = match.desc;
-            if (lookupKey === "ticketType" && (match.code === "ERR" || match.code === "C01")) {
-              const prioEl = container.querySelector("#tkt-priority-val");
-              if (prioEl) prioEl.value = "Critical";
-            }
+          } else if (descEl) {
+            descEl.value = "";
           }
         });
       };
       syncCodeInput("#tkt-type-code", "#tkt-type-desc", "ticketType");
       syncCodeInput("#tkt-solution-code", "#tkt-solution-desc", "solution");
       syncCodeInput("#tkt-module-code", "#tkt-module-desc", "menuModule");
-      syncCodeInput("#tkt-process-code", "#tkt-process-desc", "processName");
-      syncCodeInput("#tkt-menu-opt-code", "#tkt-menu-opt-desc", "menuOption");
-      ["#tkt-type-code", "#tkt-reported-by-name", "#tkt-owner", "#tkt-solution-code", "#tkt-priority-val", "#tkt-remark"].forEach((sel) => {
+      const assignInputEl = container.querySelector("#tkt-assign-to");
+      const bannerAssignEl = container.querySelector("#lh-banner-assigned-name");
+      assignInputEl?.addEventListener("input", () => {
+        if (bannerAssignEl) {
+          bannerAssignEl.textContent = assignInputEl.value.trim() || "Not Selected";
+        }
+      });
+      ["#tkt-type-code", "#tkt-reported-by-name", "#tkt-assign-to", "#tkt-solution-code", "#tkt-priority-val", "#tkt-remark"].forEach((sel) => {
         const el = container.querySelector(sel);
         el?.addEventListener("input", () => {
           el.classList.remove("lh-field-invalid");
@@ -11875,7 +11835,22 @@ body.lh-erp-body {
       });
     },
     openLookupModal(lookupKey) {
-      const catalog = this.lookupData[lookupKey];
+      let catalog = this.lookupData[lookupKey];
+      if (lookupKey === "assignTo") {
+        const users = typeof state !== "undefined" && state.getUsers ? state.getUsers() : [];
+        const items = users.map((u) => ({
+          code: u.name || u.username || u.id,
+          desc: `${u.role || "User"}${u.department ? " • " + u.department : ""}${u.username ? " (@" + u.username + ")" : ""}`
+        }));
+        if (items.length === 0) {
+          items.push({ code: "System Administrator", desc: "Super Admin (@admin)" });
+        }
+        catalog = {
+          title: "Select Assign To",
+          subtitle: "Choose the administrator, support member, or user responsible for this ticket",
+          items
+        };
+      }
       if (!catalog) return;
       this.activeLookupKey = lookupKey;
       const modal = document.getElementById("lh-lookup-modal");
@@ -11887,6 +11862,8 @@ body.lh-erp-body {
       if (titleEl) titleEl.textContent = catalog.title;
       if (subtitleEl) subtitleEl.textContent = catalog.subtitle;
       if (searchInput) searchInput.value = "";
+      const col1Label = lookupKey === "assignTo" ? "User / Name" : "Code";
+      const col2Label = lookupKey === "assignTo" ? "Role & Department" : "Description";
       const renderList = (filterText = "") => {
         const clean = filterText.toLowerCase().trim();
         const filtered = catalog.items.filter(
@@ -11900,8 +11877,8 @@ body.lh-erp-body {
         <table class="lh-lookup-table">
           <thead>
             <tr>
-              <th style="width: 110px;">Code</th>
-              <th>Description</th>
+              <th style="width: ${lookupKey === "assignTo" ? "180px" : "110px"};">${col1Label}</th>
+              <th>${col2Label}</th>
               <th style="width: 60px; text-align: center;">Action</th>
             </tr>
           </thead>
@@ -11928,15 +11905,15 @@ body.lh-erp-body {
         });
       };
       renderList();
-      searchInput?.addEventListener("input", (e) => {
-        renderList(e.target.value);
-      });
-      document.getElementById("btn-close-lh-lookup")?.addEventListener("click", () => {
-        modal.classList.add("hidden");
-      });
-      document.getElementById("btn-cancel-lh-lookup")?.addEventListener("click", () => {
-        modal.classList.add("hidden");
-      });
+      if (searchInput) {
+        searchInput.oninput = (e) => {
+          renderList(e.target.value);
+        };
+      }
+      const btnClose = document.getElementById("btn-close-lh-lookup");
+      if (btnClose) btnClose.onclick = () => modal.classList.add("hidden");
+      const btnCancel = document.getElementById("btn-cancel-lh-lookup");
+      if (btnCancel) btnCancel.onclick = () => modal.classList.add("hidden");
       modal.classList.remove("hidden");
       setTimeout(() => searchInput?.focus(), 50);
     },
@@ -11944,35 +11921,39 @@ body.lh-erp-body {
       if (lookupKey === "ticketType") {
         const codeInput = document.getElementById("tkt-type-code");
         const descInput = document.getElementById("tkt-type-desc");
-        if (codeInput) codeInput.value = code;
+        if (codeInput) {
+          codeInput.value = code;
+          codeInput.dispatchEvent(new Event("input", { bubbles: true }));
+        }
         if (descInput) descInput.value = desc;
-        if (code === "C01" || code === "ERR" || desc.toLowerCase().includes("work stop")) {
-          const prioInput = document.getElementById("tkt-priority-val");
-          if (prioInput) prioInput.value = "Critical";
+      } else if (lookupKey === "assignTo") {
+        const assignInput = document.getElementById("tkt-assign-to");
+        if (assignInput) {
+          assignInput.value = code;
+          assignInput.dispatchEvent(new Event("input", { bubbles: true }));
         }
       } else if (lookupKey === "solution") {
         const codeInput = document.getElementById("tkt-solution-code");
         const descInput = document.getElementById("tkt-solution-desc");
-        if (codeInput) codeInput.value = code;
+        if (codeInput) {
+          codeInput.value = code;
+          codeInput.dispatchEvent(new Event("input", { bubbles: true }));
+        }
         if (descInput) descInput.value = desc;
       } else if (lookupKey === "menuModule") {
         const codeInput = document.getElementById("tkt-module-code");
         const descInput = document.getElementById("tkt-module-desc");
-        if (codeInput) codeInput.value = code;
-        if (descInput) descInput.value = desc;
-      } else if (lookupKey === "processName") {
-        const codeInput = document.getElementById("tkt-process-code");
-        const descInput = document.getElementById("tkt-process-desc");
-        if (codeInput) codeInput.value = code;
-        if (descInput) descInput.value = desc;
-      } else if (lookupKey === "menuOption") {
-        const codeInput = document.getElementById("tkt-menu-opt-code");
-        const descInput = document.getElementById("tkt-menu-opt-desc");
-        if (codeInput) codeInput.value = code;
+        if (codeInput) {
+          codeInput.value = code;
+          codeInput.dispatchEvent(new Event("input", { bubbles: true }));
+        }
         if (descInput) descInput.value = desc;
       } else if (lookupKey === "priority") {
         const prioInput = document.getElementById("tkt-priority-val");
-        if (prioInput) prioInput.value = code;
+        if (prioInput) {
+          prioInput.value = code;
+          prioInput.dispatchEvent(new Event("input", { bubbles: true }));
+        }
       }
     },
     submitTicket() {
@@ -11980,16 +11961,13 @@ body.lh-erp-body {
       const typeCode = document.getElementById("tkt-type-code")?.value.trim() || "";
       const typeDesc = document.getElementById("tkt-type-desc")?.value.trim() || "";
       const reportedByName = document.getElementById("tkt-reported-by-name")?.value.trim() || "";
-      const owner = document.getElementById("tkt-owner")?.value.trim() || "";
-      const username = document.getElementById("tkt-username")?.value.trim() || (user ? user.username || user.id : "admin");
+      const assignToVal = document.getElementById("tkt-assign-to")?.value.trim() || "";
+      const typedUsername = document.getElementById("tkt-username")?.value.trim() || "";
+      const username = typedUsername || (user ? user.username || user.id : "admin");
       const solutionCode = document.getElementById("tkt-solution-code")?.value.trim() || "";
       const solutionDesc = document.getElementById("tkt-solution-desc")?.value.trim() || "";
-      const moduleCode = document.getElementById("tkt-module-code")?.value.trim() || "01";
-      const moduleDesc = document.getElementById("tkt-module-desc")?.value.trim() || "Master Management";
-      const processCode = document.getElementById("tkt-process-code")?.value.trim() || "VOUCH-POST";
-      const processDesc = document.getElementById("tkt-process-desc")?.value.trim() || "Daily Voucher Posting & Verification";
-      const menuOptCode = document.getElementById("tkt-menu-opt-code")?.value.trim() || "TRANS";
-      const menuOptDesc = document.getElementById("tkt-menu-opt-desc")?.value.trim() || "Transaction Entry & Modification";
+      const moduleCode = document.getElementById("tkt-module-code")?.value.trim() || "";
+      const moduleDesc = document.getElementById("tkt-module-desc")?.value.trim() || "";
       const priority = document.getElementById("tkt-priority-val")?.value.trim() || "";
       const remark = document.getElementById("tkt-remark")?.value.trim() || "";
       document.querySelectorAll(".lh-inline-error").forEach((el) => el.classList.remove("show"));
@@ -12011,8 +11989,8 @@ body.lh-erp-body {
       if (!reportedByName) {
         firstInvalid = firstInvalid || setFieldError("tkt-reported-by-name", "err-tkt-reported-by-name", "Please enter Reported by name*");
       }
-      if (!owner) {
-        firstInvalid = firstInvalid || setFieldError("tkt-owner", "err-tkt-owner", "Please enter Req. Reported By/Owner*");
+      if (!assignToVal) {
+        firstInvalid = firstInvalid || setFieldError("tkt-assign-to", "err-tkt-assign-to", "Please enter Assign To*");
       }
       if (!solutionCode) {
         firstInvalid = firstInvalid || setFieldError("tkt-solution-code", "err-tkt-solution", "Please enter Solution*");
@@ -12037,7 +12015,22 @@ body.lh-erp-body {
       }
       const companyId = user && user.companyId && user.companyId !== "ALL" ? user.companyId : state.getActiveCompanyId() !== "ALL" ? state.getActiveCompanyId() : "COMP-UMA";
       const company = state.getCompanyById(companyId);
-      const title = `${moduleDesc} - ${processDesc}: ${remark.slice(0, 50)}${remark.length > 50 ? "..." : ""}`;
+
+      // Resolve assigned user from registered directory if matching
+      const allUsers = typeof state !== "undefined" && state.getUsers ? state.getUsers() : [];
+      const cleanAssign = assignToVal.toLowerCase();
+      const matchedAssignee = allUsers.find((u) =>
+        (u.name && u.name.toLowerCase() === cleanAssign) ||
+        (u.username && u.username.toLowerCase() === cleanAssign) ||
+        (u.id && u.id.toLowerCase() === cleanAssign)
+      );
+      const assignedToName = matchedAssignee ? matchedAssignee.name : assignToVal;
+      const assignedToUsername = matchedAssignee ? (matchedAssignee.username || matchedAssignee.id) : "admin";
+      const assignedToId = matchedAssignee ? (matchedAssignee.id || matchedAssignee.username) : "admin";
+      const assignedToEmail = matchedAssignee && matchedAssignee.email ? matchedAssignee.email : "admin@erphub.com";
+
+      const titlePrefix = moduleDesc || typeDesc || typeCode || "Support Ticket";
+      const title = `${titlePrefix}: ${remark.slice(0, 60)}${remark.length > 60 ? "..." : ""}`;
       const newQuery = state.saveQuery({
         companyId,
         companyName: company ? company.name : "UMA STEEL ALLOYS AND POWER LIMITED",
@@ -12046,21 +12039,21 @@ body.lh-erp-body {
         remark,
         ticketType: `${typeCode}${typeDesc ? " - " + typeDesc : ""}`,
         reportedByName,
-        raisedBy: reportedByName || owner,
+        raisedBy: reportedByName,
         raisedByUsername: username,
         raisedById: user ? user.username || user.id : username,
         raisedByEmail: user && user.email || `${username}@erphub.com`,
         erpSolution: `${solutionCode}${solutionDesc ? " - " + solutionDesc : ""}`,
-        module: moduleDesc,
+        module: moduleDesc || moduleCode || "General",
         moduleCode,
-        processName: processDesc,
-        processCode,
-        menuOption: menuOptDesc,
-        menuOptionCode: menuOptCode,
-        assignedTo: "System Administrator",
-        assignedToUsername: "admin",
-        assignedToId: "admin",
-        assignedToEmail: "admin@erphub.com",
+        processName: "",
+        processCode: "",
+        menuOption: "",
+        menuOptionCode: "",
+        assignedTo: assignedToName,
+        assignedToUsername,
+        assignedToId,
+        assignedToEmail,
         priority,
         status: "Open",
         expectedDate: new Date(Date.now() + 48 * 60 * 60 * 1e3).toISOString(),
@@ -12116,8 +12109,8 @@ body.lh-erp-body {
 
       window.dispatchEvent(new CustomEvent("showToast", {
         detail: {
-          title: "Ticket Raised to Admin",
-          message: `Support Query ${newQuery.id} raised successfully directly to System Administrator for review and resolution.`,
+          title: "Support Ticket Raised",
+          message: `Support Query ${newQuery.id} raised successfully and assigned to ${assignedToName}.`,
           type: "success"
         }
       }));
