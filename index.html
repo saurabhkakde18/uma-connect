@@ -31,13 +31,13 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Chart.js 4.4.2 -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <script async src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 
   <!-- SheetJS (XLSX) for Real Excel Export -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script async src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Supabase Web SDK (v2) for PostgreSQL Real-Time Sync -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Inlined Application Stylesheets (Standalone Shareable Version) -->
   <style id="standalone-main-styles">
@@ -7566,36 +7566,121 @@ body.lh-erp-body {
       return () => this.listeners.delete(fn);
     }
 
+    createRestFallbackClient(baseUrl, apiKey) {
+      const cleanBase = String(baseUrl || "").replace(/\/+$/, "");
+      const baseHeaders = {
+        apikey: apiKey,
+        Authorization: "Bearer " + apiKey,
+        "Content-Type": "application/json"
+      };
+      const buildQuery = (table) => {
+        const params = [];
+        let method = "GET";
+        let bodyData = null;
+        let prefer = "";
+        const api = {
+          select(cols = "*") {
+            params.push("select=" + encodeURIComponent(cols));
+            return api;
+          },
+          limit(n) {
+            params.push("limit=" + encodeURIComponent(String(n)));
+            return api;
+          },
+          eq(col, val) {
+            params.push(encodeURIComponent(col) + "=eq." + encodeURIComponent(String(val)));
+            return api;
+          },
+          or(expr) {
+            params.push("or=(" + expr + ")");
+            return api;
+          },
+          upsert(payload) {
+            method = "POST";
+            bodyData = Array.isArray(payload) ? payload : [payload];
+            prefer = "resolution=merge-duplicates,return=representation";
+            return api;
+          },
+          delete() {
+            method = "DELETE";
+            return api;
+          },
+          async _exec() {
+            try {
+              const qs = params.length > 0 ? "?" + params.join("&") : "";
+              const headers = { ...baseHeaders };
+              if (prefer) headers.Prefer = prefer;
+              const opts = { method, headers };
+              if (bodyData !== null) opts.body = JSON.stringify(bodyData);
+              const res = await fetch(cleanBase + "/rest/v1/" + table + qs, opts);
+              if (!res.ok) {
+                const errText = await res.text().catch(() => res.statusText);
+                return { data: null, error: { message: "HTTP " + res.status + ": " + errText } };
+              }
+              const text = await res.text();
+              const parsed = text ? JSON.parse(text) : [];
+              return { data: parsed, error: null };
+            } catch (e) {
+              return { data: null, error: { message: e.message || "Network error" } };
+            }
+          },
+          then(resolve, reject) {
+            return api._exec().then(resolve, reject);
+          }
+        };
+        return api;
+      };
+      return {
+        from(table) {
+          return buildQuery(table);
+        },
+        storage: {
+          async listBuckets() { return { data: [{ name: "uma-connect-storage", id: "uma-connect-storage" }], error: null }; },
+          async createBucket() { return { data: null, error: null }; },
+          from(bucket) {
+            return {
+              async upload(filePath, blob, opts = {}) {
+                try {
+                  const res = await fetch(cleanBase + "/storage/v1/object/" + bucket + "/" + filePath, {
+                    method: "POST",
+                    headers: {
+                      apikey: apiKey,
+                      Authorization: "Bearer " + apiKey,
+                      "Content-Type": opts.contentType || "application/octet-stream",
+                      "x-upsert": "true"
+                    },
+                    body: blob
+                  });
+                  if (!res.ok) return { data: null, error: { message: "HTTP " + res.status } };
+                  return { data: { path: filePath }, error: null };
+                } catch (e) {
+                  return { data: null, error: { message: e.message } };
+                }
+              },
+              getPublicUrl(filePath) {
+                return { data: { publicUrl: cleanBase + "/storage/v1/object/public/" + bucket + "/" + filePath } };
+              }
+            };
+          }
+        }
+      };
+    }
+
     async loadSupabaseSDK() {
       if (typeof window !== "undefined" && window.supabase && window.supabase.createClient) {
         return true;
       }
       if (typeof window === "undefined") return false;
 
-      // Poll up to 6 seconds for CDN script in head
+      // Poll briefly up to 2.5 seconds for async CDN script in head
       const start = Date.now();
-      while (Date.now() - start < 6000) {
+      while (Date.now() - start < 2500) {
         if (window.supabase && window.supabase.createClient) {
           return true;
         }
         await new Promise((r) => setTimeout(r, 150));
       }
-
-      // If still missing, inject fallback CDN script dynamically
-      return new Promise((resolve) => {
-        console.log("[Supabase] Injecting fallback SDK script...");
-        const s = document.createElement("script");
-        s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
-        s.onload = () => resolve(Boolean(window.supabase && window.supabase.createClient));
-        s.onerror = () => {
-          const s2 = document.createElement("script");
-          s2.src = "https://unpkg.com/@supabase/supabase-js@2";
-          s2.onload = () => resolve(Boolean(window.supabase && window.supabase.createClient));
-          s2.onerror = () => resolve(false);
-          document.head.appendChild(s2);
-        };
-        document.head.appendChild(s);
-      });
+      return false;
     }
 
     async init() {
@@ -7608,15 +7693,16 @@ body.lh-erp-body {
       this.notifyStatus({ isConnected: false, isConfigured: true, isSyncing: true, message: "Connecting to Supabase..." });
 
       const sdkReady = await this.loadSupabaseSDK();
-      if (!sdkReady) {
-        this.notifyStatus({ isConnected: false, isConfigured: true, isSyncing: false, message: "Supabase SDK offline or not yet loaded" });
-        return { success: false, message: "Supabase SDK not loaded." };
-      }
 
       try {
-        this.client = window.supabase.createClient(config.url, config.anonKey, {
-          auth: { persistSession: false, autoRefreshToken: false }
-        });
+        if (sdkReady && window.supabase && window.supabase.createClient) {
+          this.client = window.supabase.createClient(config.url, config.anonKey, {
+            auth: { persistSession: false, autoRefreshToken: false }
+          });
+        } else {
+          console.log("[Supabase] CDN unavailable on this PC - using built-in direct REST client!");
+          this.client = this.createRestFallbackClient(config.url, config.anonKey);
+        }
 
         // Ping public.queries
         const { data, error } = await this.client.from("queries").select("id").limit(1);
@@ -15228,17 +15314,22 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
       // 1. Try local memory authentication first
       let res = auth.login(cleanVal, cleanPwd);
 
-      // 2. If not found locally, query Supabase database in real time!
-      if (!res.success && supabaseService.client) {
+      // 2. If not found locally, ensure Supabase is initialized and query cloud in real time!
+      if (!res.success && supabaseService.isConfigured()) {
         try {
           if (errorBanner) {
             errorBanner.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-primary"></i> <span>Verifying credentials with Supabase cloud...</span>`;
             errorBanner.classList.remove("hidden");
           }
-          const remoteUser = await supabaseService.fetchUserByUsernameOrId(cleanVal);
-          if (remoteUser) {
-            state.mergeRemoteUser(remoteUser);
-            res = auth.login(cleanVal, cleanPwd);
+          if (!supabaseService.client) {
+            await supabaseService.init();
+          }
+          if (supabaseService.client) {
+            const remoteUser = await supabaseService.fetchUserByUsernameOrId(cleanVal);
+            if (remoteUser) {
+              state.mergeRemoteUser(remoteUser);
+              res = auth.login(cleanVal, cleanPwd);
+            }
           }
         } catch (err) {
           console.warn("[Sign In] Remote verify error:", err);

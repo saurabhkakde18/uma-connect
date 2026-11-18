@@ -78,7 +78,7 @@ namespace UMAConnectInstaller
 
             var subtitleLabel = new Label
             {
-                Text = "Enterprise Operations & Query Portal (4 Glass Themes) — Setup Wizard",
+                Text = "Enterprise Operations & Query Portal — Setup Wizard",
                 ForeColor = Color.FromArgb(186, 210, 245),
                 Font = new Font("Segoe UI", 9.5f),
                 AutoSize = true,
@@ -253,7 +253,23 @@ namespace UMAConnectInstaller
             string tempZip = Path.Combine(Path.GetTempPath(), "umaconnect_setup_" + Guid.NewGuid().ToString("N") + ".zip");
             try
             {
-                SetProgress(15, "Preparing installation directory...");
+                SetProgress(10, "Closing any running UMA Connect instance...");
+                try
+                {
+                    foreach (Process p in Process.GetProcessesByName("UMA Connect"))
+                    {
+                        try
+                        {
+                            p.Kill();
+                            p.WaitForExit(2000);
+                        }
+                        catch { }
+                    }
+                    Thread.Sleep(400);
+                }
+                catch { }
+
+                SetProgress(20, "Preparing installation directory...");
                 Directory.CreateDirectory(installDir);
 
                 SetProgress(35, "Extracting application files...");
