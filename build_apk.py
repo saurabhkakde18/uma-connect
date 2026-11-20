@@ -283,8 +283,7 @@ def build_aligned_signed_apk(output_path, payload, key, cert):
     digests_field = struct.pack("<I", len(digests_seq)) + digests_seq
 
     cert_entry = struct.pack("<I", len(cert_der)) + cert_der
-    certs_seq = struct.pack("<I", len(cert_entry)) + cert_entry
-    certs_field = struct.pack("<I", len(certs_seq)) + certs_seq
+    certs_field = struct.pack("<I", len(cert_entry)) + cert_entry
 
     attrs_field = struct.pack("<I", 0)
 
@@ -401,6 +400,19 @@ def verify_apk(apk_path):
     d_algo, d_len = struct.unpack("<II", d_entry[:8])
     stored_top_digest = d_entry[8:8+d_len]
     assert computed_top_digest == stored_top_digest, "v2 content digest mismatch"
+
+    # Verify certificate parsing inside signed_data (strict AOSP simulation)
+    cf_offset = 4 + df_len
+    cf_len = struct.unpack("<I", signed_data[cf_offset:cf_offset+4])[0]
+    certs_data = signed_data[cf_offset+4 : cf_offset+4+cf_len]
+    cert_raw_len = struct.unpack("<I", certs_data[:4])[0]
+    encoded_cert = certs_data[4 : 4+cert_raw_len]
+    cert_obj = x509.load_der_x509_certificate(encoded_cert, default_backend())
+    cert_pk = cert_obj.public_key().public_bytes(
+        serialization.Encoding.DER,
+        serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    assert cert_pk == pubkey_bytes, "Public key mismatch between certificate and signature block"
 
     # 3. Verify ZIP alignment
     import zipfile
