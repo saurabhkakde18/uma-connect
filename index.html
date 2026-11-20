@@ -12866,7 +12866,13 @@ body.lh-erp-body {
       const departments = state.getDepartments();
       const filteredUsers = allUsers.filter((u) => {
         const uSearch = this.filter.search.toLowerCase();
-        const matchSearch = !this.filter.search || u.name && u.name.toLowerCase().includes(uSearch) || u.username && u.username.toLowerCase().includes(uSearch) || u.id && u.id.toLowerCase().includes(uSearch) || u.phone && u.phone.includes(this.filter.search) || u.department && u.department.toLowerCase().includes(uSearch);
+        const matchSearch = !this.filter.search || 
+          (u.name && u.name.toLowerCase().includes(uSearch)) || 
+          (u.username && u.username.toLowerCase().includes(uSearch)) || 
+          (u.id && u.id.toLowerCase().includes(uSearch)) || 
+          (u.department && u.department.toLowerCase().includes(uSearch)) ||
+          (u.designation && u.designation.toLowerCase().includes(uSearch)) ||
+          (u.role && u.role.toLowerCase().includes(uSearch));
         const matchRole = this.filter.role === "ALL" || u.role === this.filter.role;
         const matchCompany = this.filter.company === "ALL" || u.companyId === this.filter.company;
         return matchSearch && matchRole && matchCompany;
@@ -12933,7 +12939,7 @@ body.lh-erp-body {
           <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 280px;">
             <div style="position: relative; width: 100%;">
               <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
-              <input type="text" id="admin-user-search" class="form-input" style="padding-left: 36px; height: 38px;" placeholder="Search users by Username, Full Name, Phone, or Department..." value="${this.filter.search}">
+              <input type="text" id="admin-user-search" class="form-input" style="padding-left: 36px; height: 38px;" placeholder="Search users by Username, Full Name, Department, or Role..." value="${this.filter.search}">
             </div>
           </div>
 
@@ -12981,7 +12987,6 @@ body.lh-erp-body {
                 <th>Role</th>
                 <th>Assigned Company</th>
                 <th>Department & Designation</th>
-                <th>Contact Phone</th>
                 <th style="text-align: center; width: 90px;">Status</th>
                 <th style="text-align: center; width: 160px;">Actions</th>
               </tr>
@@ -12989,7 +12994,7 @@ body.lh-erp-body {
             <tbody>
               ${filteredUsers.length === 0 ? `
                 <tr>
-                  <td colspan="8" style="text-align: center; padding: 36px; color: var(--text-muted);">
+                  <td colspan="7" style="text-align: center; padding: 36px; color: var(--text-muted);">
                     <i class="fa-solid fa-user-slash" style="font-size: 32px; margin-bottom: 8px; color: #cbd5e1; display: block;"></i>
                     <strong>No users found. Click "+ Add New User" above to create a user account.</strong>
                   </td>
@@ -13018,7 +13023,7 @@ body.lh-erp-body {
 
                   <!-- Role Badge -->
                   <td>
-                    <span class="badge-role ${u.role === "Super Admin" ? "role-super" : u.role === "Company Admin" ? "role-admin" : u.role === "ERP Support Team" ? "role-support" : "role-employee"}">
+                    <span class="badge-role ${u.role === "Super Admin" ? "role-super" : u.role === "Company Admin" || (u.role && u.role.toLowerCase().includes("admin")) ? "role-admin" : u.role === "ERP Support Team" ? "role-support" : "role-employee"}">
                       ${u.role === "Super Admin" ? '<i class="fa-solid fa-crown" style="font-size: 10px; margin-right: 3px;"></i>' : ""}
                       ${u.role}
                     </span>
@@ -13036,11 +13041,6 @@ body.lh-erp-body {
                   <td>
                     <div style="font-size: 12.5px; font-weight: 600; color: var(--text-primary);">${u.department || "Operations"}</div>
                     <div class="text-secondary text-sm" style="font-size: 11.5px;">${u.designation || "Staff Member"}</div>
-                  </td>
-
-                  <!-- Contact Phone -->
-                  <td>
-                    ${u.phone ? `<div style="font-size: 12px; color: var(--text-secondary); font-family: var(--font-mono);"><i class="fa-solid fa-phone" style="font-size: 10px; color: var(--text-muted); margin-right: 4px;"></i>${u.phone}</div>` : `<span style="color: #94a3b8; font-size: 12px;">-</span>`}
                   </td>
 
                   <!-- Status -->
@@ -13088,7 +13088,7 @@ body.lh-erp-body {
 
       <!-- 1. ADD USER MODAL (Admin Only) -->
       <div id="admin-add-user-modal" class="modal-overlay hidden">
-        <div class="modal-container modal-md animate-scale-up" style="max-width: 560px;">
+        <div class="modal-container modal-md animate-scale-up" style="max-width: 580px;">
           <div class="modal-header" style="background: var(--glass-subsurface); border-bottom: 1px solid var(--glass-border);">
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
@@ -13116,28 +13116,41 @@ body.lh-erp-body {
                 <input type="text" id="add-user-name" class="form-input" placeholder="e.g. Rajesh Kumar" required autocomplete="off">
               </div>
 
-              <!-- Initial Password & Phone Grid -->
+              <!-- Initial Password & Account Status Grid -->
               <div class="form-row-grid mb-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div class="form-group">
                   <label class="form-label" for="add-user-password" style="font-size: 12px; font-weight: 700;">Initial Password <span class="text-danger">*</span></label>
-                  <input type="password" id="add-user-password" class="form-input" placeholder="Min. 4 characters..." value="password123" required minlength="4">
+                  <input type="password" id="add-user-password" class="form-input" placeholder="Min. 4 characters..." required minlength="4">
                 </div>
                 <div class="form-group">
-                  <label class="form-label" for="add-user-phone" style="font-size: 12px; font-weight: 700;">Mobile / Phone</label>
-                  <input type="tel" id="add-user-phone" class="form-input" placeholder="e.g. +91 98765 00000">
+                  <label class="form-label" for="add-user-status" style="font-size: 12px; font-weight: 700;">Account Status</label>
+                  <select id="add-user-status" class="form-select">
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive (Access Suspended)</option>
+                  </select>
                 </div>
               </div>
 
               <!-- Role & Company Grid -->
               <div class="form-row-grid mb-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div class="form-group">
-                  <label class="form-label" for="add-user-role" style="font-size: 12px; font-weight: 700;">Role <span class="text-danger">*</span></label>
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                    <label class="form-label" for="add-user-role" style="font-size: 12px; font-weight: 700; margin-bottom: 0;">Role <span class="text-danger">*</span></label>
+                    <button type="button" class="btn-toggle-custom-input" id="btn-toggle-custom-role" style="font-size: 11px; text-decoration: underline; cursor: pointer; color: var(--primary); background: none; border: none; padding: 0;">
+                      <i class="fa-solid fa-pen-to-square"></i> Type Manually
+                    </button>
+                  </div>
                   <select id="add-user-role" class="form-select" required>
+                    <option value="" disabled selected>-- Select Role or Choose Other --</option>
                     <option value="Employee">Employee (Plant Staff)</option>
                     <option value="ERP Support Team">ERP Support Team (Technical)</option>
                     <option value="Company Admin">Company Admin (Plant Manager)</option>
                     <option value="Super Admin">Super Admin (Central Group)</option>
+                    <option value="OTHER" style="font-weight: 700; color: var(--primary);">+ Other (Specify Custom Role...)</option>
                   </select>
+                  <div id="add-user-role-custom-wrap" class="hidden" style="margin-top: 6px;">
+                    <input type="text" id="add-user-role-custom" class="form-input" placeholder="Enter custom role title..." autocomplete="off">
+                  </div>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="add-user-company" style="font-size: 12px; font-weight: 700;">Assigned Company <span class="text-danger">*</span></label>
@@ -13152,24 +13165,51 @@ body.lh-erp-body {
               <!-- Department & Designation Grid -->
               <div class="form-row-grid mb-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div class="form-group">
-                  <label class="form-label" for="add-user-department" style="font-size: 12px; font-weight: 700;">Department</label>
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                    <label class="form-label" for="add-user-department" style="font-size: 12px; font-weight: 700; margin-bottom: 0;">Department</label>
+                    <button type="button" class="btn-toggle-custom-input" id="btn-toggle-custom-dept" style="font-size: 11px; text-decoration: underline; cursor: pointer; color: var(--primary); background: none; border: none; padding: 0;">
+                      <i class="fa-solid fa-pen-to-square"></i> Type Manually
+                    </button>
+                  </div>
                   <select id="add-user-department" class="form-select">
+                    <option value="" disabled selected>-- Select Department or Choose Other --</option>
                     ${departments.map((d) => `<option value="${d}">${d}</option>`).join("")}
+                    <option value="OTHER" style="font-weight: 700; color: var(--primary);">+ Other (Specify Manually...)</option>
                   </select>
+                  <div id="add-user-dept-custom-wrap" class="hidden" style="margin-top: 6px;">
+                    <input type="text" id="add-user-dept-custom" class="form-input" placeholder="Enter custom department name..." autocomplete="off">
+                  </div>
                 </div>
                 <div class="form-group">
-                  <label class="form-label" for="add-user-designation" style="font-size: 12px; font-weight: 700;">Designation</label>
-                  <input type="text" id="add-user-designation" class="form-input" placeholder="e.g. Plant Engineer / Shift Incharge" value="Plant Engineer">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                    <label class="form-label" for="add-user-designation-select" style="font-size: 12px; font-weight: 700; margin-bottom: 0;">Designation</label>
+                    <button type="button" class="btn-toggle-custom-input" id="btn-toggle-custom-desig" style="font-size: 11px; text-decoration: underline; cursor: pointer; color: var(--primary); background: none; border: none; padding: 0;">
+                      <i class="fa-solid fa-pen-to-square"></i> Type Manually
+                    </button>
+                  </div>
+                  <select id="add-user-designation-select" class="form-select">
+                    <option value="" disabled selected>-- Select Designation or Type Custom --</option>
+                    <option value="Plant Engineer">Plant Engineer</option>
+                    <option value="Shift Incharge">Shift Incharge</option>
+                    <option value="Plant Manager">Plant Manager</option>
+                    <option value="Assistant General Manager (AGM)">Assistant General Manager (AGM)</option>
+                    <option value="General Manager (GM)">General Manager (GM)</option>
+                    <option value="Production Supervisor">Production Supervisor</option>
+                    <option value="Mechanical Maintenance Engineer">Mechanical Maintenance Engineer</option>
+                    <option value="Electrical & Instrumentation Engineer">Electrical & Instrumentation Engineer</option>
+                    <option value="Quality Control Officer / Chemist">Quality Control Officer / Chemist</option>
+                    <option value="Store Incharge / Executive">Store Incharge / Executive</option>
+                    <option value="Accounts & Finance Executive">Accounts & Finance Executive</option>
+                    <option value="IT & ERP Systems Administrator">IT & ERP Systems Administrator</option>
+                    <option value="HR & Admin Officer">HR & Admin Officer</option>
+                    <option value="Furnace Operator / Technician">Furnace Operator / Technician</option>
+                    <option value="Rolling Mill Operator / Fitter">Rolling Mill Operator / Fitter</option>
+                    <option value="OTHER" style="font-weight: 700; color: var(--primary);">+ Other (Specify Manually...)</option>
+                  </select>
+                  <div id="add-user-desig-custom-wrap" class="hidden" style="margin-top: 6px;">
+                    <input type="text" id="add-user-designation" class="form-input" placeholder="Enter custom designation (e.g. Metallurgist)..." autocomplete="off">
+                  </div>
                 </div>
-              </div>
-
-              <!-- Status -->
-              <div class="form-group">
-                <label class="form-label" for="add-user-status" style="font-size: 12px; font-weight: 700;">Account Status</label>
-                <select id="add-user-status" class="form-select">
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive (Access Suspended)</option>
-                </select>
               </div>
             </div>
 
@@ -13185,7 +13225,7 @@ body.lh-erp-body {
 
       <!-- 2. EDIT USER MODAL -->
       <div id="admin-edit-user-modal" class="modal-overlay hidden">
-        <div class="modal-container modal-md animate-scale-up" style="max-width: 560px;">
+        <div class="modal-container modal-md animate-scale-up" style="max-width: 580px;">
           <div class="modal-header" style="background: var(--glass-subsurface); border-bottom: 1px solid var(--glass-border);">
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
@@ -13215,28 +13255,40 @@ body.lh-erp-body {
                 <input type="text" id="edit-user-name" class="form-input" required autocomplete="off">
               </div>
 
-              <!-- Password & Phone Grid -->
+              <!-- Password & Account Status Grid -->
               <div class="form-row-grid mb-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div class="form-group">
                   <label class="form-label" for="edit-user-password" style="font-size: 12px; font-weight: 700;">Change Password (Optional)</label>
                   <input type="password" id="edit-user-password" class="form-input" placeholder="Leave blank to keep current">
                 </div>
                 <div class="form-group">
-                  <label class="form-label" for="edit-user-phone" style="font-size: 12px; font-weight: 700;">Mobile / Phone</label>
-                  <input type="tel" id="edit-user-phone" class="form-input">
+                  <label class="form-label" for="edit-user-status" style="font-size: 12px; font-weight: 700;">Account Status</label>
+                  <select id="edit-user-status" class="form-select">
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive (Access Suspended)</option>
+                  </select>
                 </div>
               </div>
 
               <!-- Role & Company Grid -->
               <div class="form-row-grid mb-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div class="form-group">
-                  <label class="form-label" for="edit-user-role" style="font-size: 12px; font-weight: 700;">Role <span class="text-danger">*</span></label>
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                    <label class="form-label" for="edit-user-role" style="font-size: 12px; font-weight: 700; margin-bottom: 0;">Role <span class="text-danger">*</span></label>
+                    <button type="button" class="btn-toggle-custom-input" id="btn-toggle-edit-role" style="font-size: 11px; text-decoration: underline; cursor: pointer; color: var(--primary); background: none; border: none; padding: 0;">
+                      <i class="fa-solid fa-pen-to-square"></i> Type Manually
+                    </button>
+                  </div>
                   <select id="edit-user-role" class="form-select" required>
                     <option value="Employee">Employee (Plant Staff)</option>
                     <option value="ERP Support Team">ERP Support Team (Technical)</option>
                     <option value="Company Admin">Company Admin (Plant Manager)</option>
                     <option value="Super Admin">Super Admin (Central Group)</option>
+                    <option value="OTHER" style="font-weight: 700; color: var(--primary);">+ Other (Specify Custom Role...)</option>
                   </select>
+                  <div id="edit-user-role-custom-wrap" class="hidden" style="margin-top: 6px;">
+                    <input type="text" id="edit-user-role-custom" class="form-input" placeholder="Enter custom role title..." autocomplete="off">
+                  </div>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="edit-user-company" style="font-size: 12px; font-weight: 700;">Assigned Company <span class="text-danger">*</span></label>
@@ -13251,24 +13303,49 @@ body.lh-erp-body {
               <!-- Department & Designation Grid -->
               <div class="form-row-grid mb-3" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div class="form-group">
-                  <label class="form-label" for="edit-user-department" style="font-size: 12px; font-weight: 700;">Department</label>
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                    <label class="form-label" for="edit-user-department" style="font-size: 12px; font-weight: 700; margin-bottom: 0;">Department</label>
+                    <button type="button" class="btn-toggle-custom-input" id="btn-toggle-edit-dept" style="font-size: 11px; text-decoration: underline; cursor: pointer; color: var(--primary); background: none; border: none; padding: 0;">
+                      <i class="fa-solid fa-pen-to-square"></i> Type Manually
+                    </button>
+                  </div>
                   <select id="edit-user-department" class="form-select">
                     ${departments.map((d) => `<option value="${d}">${d}</option>`).join("")}
+                    <option value="OTHER" style="font-weight: 700; color: var(--primary);">+ Other (Specify Manually...)</option>
                   </select>
+                  <div id="edit-user-dept-custom-wrap" class="hidden" style="margin-top: 6px;">
+                    <input type="text" id="edit-user-dept-custom" class="form-input" placeholder="Enter custom department name..." autocomplete="off">
+                  </div>
                 </div>
                 <div class="form-group">
-                  <label class="form-label" for="edit-user-designation" style="font-size: 12px; font-weight: 700;">Designation</label>
-                  <input type="text" id="edit-user-designation" class="form-input">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                    <label class="form-label" for="edit-user-designation-select" style="font-size: 12px; font-weight: 700; margin-bottom: 0;">Designation</label>
+                    <button type="button" class="btn-toggle-custom-input" id="btn-toggle-edit-desig" style="font-size: 11px; text-decoration: underline; cursor: pointer; color: var(--primary); background: none; border: none; padding: 0;">
+                      <i class="fa-solid fa-pen-to-square"></i> Type Manually
+                    </button>
+                  </div>
+                  <select id="edit-user-designation-select" class="form-select">
+                    <option value="Plant Engineer">Plant Engineer</option>
+                    <option value="Shift Incharge">Shift Incharge</option>
+                    <option value="Plant Manager">Plant Manager</option>
+                    <option value="Assistant General Manager (AGM)">Assistant General Manager (AGM)</option>
+                    <option value="General Manager (GM)">General Manager (GM)</option>
+                    <option value="Production Supervisor">Production Supervisor</option>
+                    <option value="Mechanical Maintenance Engineer">Mechanical Maintenance Engineer</option>
+                    <option value="Electrical & Instrumentation Engineer">Electrical & Instrumentation Engineer</option>
+                    <option value="Quality Control Officer / Chemist">Quality Control Officer / Chemist</option>
+                    <option value="Store Incharge / Executive">Store Incharge / Executive</option>
+                    <option value="Accounts & Finance Executive">Accounts & Finance Executive</option>
+                    <option value="IT & ERP Systems Administrator">IT & ERP Systems Administrator</option>
+                    <option value="HR & Admin Officer">HR & Admin Officer</option>
+                    <option value="Furnace Operator / Technician">Furnace Operator / Technician</option>
+                    <option value="Rolling Mill Operator / Fitter">Rolling Mill Operator / Fitter</option>
+                    <option value="OTHER" style="font-weight: 700; color: var(--primary);">+ Other (Specify Manually...)</option>
+                  </select>
+                  <div id="edit-user-desig-custom-wrap" class="hidden" style="margin-top: 6px;">
+                    <input type="text" id="edit-user-designation" class="form-input" placeholder="Enter custom designation (e.g. Metallurgist)..." autocomplete="off">
+                  </div>
                 </div>
-              </div>
-
-              <!-- Status -->
-              <div class="form-group">
-                <label class="form-label" for="edit-user-status" style="font-size: 12px; font-weight: 700;">Account Status</label>
-                <select id="edit-user-status" class="form-select">
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive (Access Suspended)</option>
-                </select>
               </div>
             </div>
 
@@ -13312,6 +13389,8 @@ body.lh-erp-body {
         this.filter.company = "ALL";
         this.render();
       });
+
+      // --- Add User Modal Toggle & Custom Inputs ---
       const modalAdd = container.querySelector("#admin-add-user-modal");
       container.querySelector("#btn-admin-add-user")?.addEventListener("click", () => {
         if (modalAdd) {
@@ -13322,18 +13401,98 @@ body.lh-erp-body {
       const closeAddModal = () => modalAdd?.classList.add("hidden");
       container.querySelector("#btn-close-add-user-modal")?.addEventListener("click", closeAddModal);
       container.querySelector("#btn-cancel-add-user-modal")?.addEventListener("click", closeAddModal);
+
+      // Add Modal: Role Custom Field
+      const addRoleSelect = container.querySelector("#add-user-role");
+      const addRoleWrap = container.querySelector("#add-user-role-custom-wrap");
+      const addRoleInput = container.querySelector("#add-user-role-custom");
+      const btnToggleAddRole = container.querySelector("#btn-toggle-custom-role");
+      addRoleSelect?.addEventListener("change", () => {
+        if (addRoleSelect.value === "OTHER") {
+          addRoleWrap?.classList.remove("hidden");
+          addRoleInput?.focus();
+        } else {
+          addRoleWrap?.classList.add("hidden");
+        }
+      });
+      btnToggleAddRole?.addEventListener("click", () => {
+        if (addRoleSelect) addRoleSelect.value = "OTHER";
+        addRoleWrap?.classList.remove("hidden");
+        addRoleInput?.focus();
+      });
+
+      // Add Modal: Department Custom Field
+      const addDeptSelect = container.querySelector("#add-user-department");
+      const addDeptWrap = container.querySelector("#add-user-dept-custom-wrap");
+      const addDeptInput = container.querySelector("#add-user-dept-custom");
+      const btnToggleAddDept = container.querySelector("#btn-toggle-custom-dept");
+      addDeptSelect?.addEventListener("change", () => {
+        if (addDeptSelect.value === "OTHER") {
+          addDeptWrap?.classList.remove("hidden");
+          addDeptInput?.focus();
+        } else {
+          addDeptWrap?.classList.add("hidden");
+        }
+      });
+      btnToggleAddDept?.addEventListener("click", () => {
+        if (addDeptSelect) addDeptSelect.value = "OTHER";
+        addDeptWrap?.classList.remove("hidden");
+        addDeptInput?.focus();
+      });
+
+      // Add Modal: Designation Custom Field
+      const addDesigSelect = container.querySelector("#add-user-designation-select");
+      const addDesigWrap = container.querySelector("#add-user-desig-custom-wrap");
+      const addDesigInput = container.querySelector("#add-user-designation");
+      const btnToggleAddDesig = container.querySelector("#btn-toggle-custom-desig");
+      addDesigSelect?.addEventListener("change", () => {
+        if (addDesigSelect.value === "OTHER") {
+          addDesigWrap?.classList.remove("hidden");
+          addDesigInput?.focus();
+        } else {
+          addDesigWrap?.classList.add("hidden");
+          if (addDesigInput) addDesigInput.value = addDesigSelect.value;
+        }
+      });
+      btnToggleAddDesig?.addEventListener("click", () => {
+        if (addDesigSelect) addDesigSelect.value = "OTHER";
+        addDesigWrap?.classList.remove("hidden");
+        addDesigInput?.focus();
+      });
+
+      // --- Add User Form Submission ---
       const formAdd = container.querySelector("#form-admin-add-user");
       formAdd?.addEventListener("submit", (e) => {
         e.preventDefault();
         const username = document.getElementById("add-user-username")?.value.trim();
         const name = document.getElementById("add-user-name")?.value.trim();
         const password = document.getElementById("add-user-password")?.value.trim();
-        const phone = document.getElementById("add-user-phone")?.value.trim();
-        const role = document.getElementById("add-user-role")?.value;
         const companyId = document.getElementById("add-user-company")?.value;
-        const department = document.getElementById("add-user-department")?.value;
-        const designation = document.getElementById("add-user-designation")?.value.trim();
         const status = document.getElementById("add-user-status")?.value;
+
+        // Role resolution
+        let role = document.getElementById("add-user-role")?.value;
+        const customRole = document.getElementById("add-user-role-custom")?.value.trim();
+        if (role === "OTHER" || customRole) {
+          role = customRole || "Employee";
+        }
+        if (!role) role = "Employee";
+
+        // Department resolution
+        let department = document.getElementById("add-user-department")?.value;
+        const customDept = document.getElementById("add-user-dept-custom")?.value.trim();
+        if (department === "OTHER" || customDept) {
+          department = customDept || "Operations";
+        }
+        if (!department) department = "Operations";
+        state.addDepartment(department);
+
+        // Designation resolution
+        const desigSelectVal = document.getElementById("add-user-designation-select")?.value;
+        const customDesig = document.getElementById("add-user-designation")?.value.trim();
+        let designation = (desigSelectVal === "OTHER" || customDesig) ? customDesig : (desigSelectVal || "");
+        if (!designation) designation = "Staff Member";
+
         if (!username || !name) {
           alert("Please fill in mandatory fields (Username and Full Name).");
           return;
@@ -13343,7 +13502,7 @@ body.lh-erp-body {
             username,
             name,
             password: password || "password123",
-            phone,
+            phone: "",
             role,
             companyId,
             department,
@@ -13363,10 +13522,72 @@ body.lh-erp-body {
           alert(err.message || "Failed to create user.");
         }
       });
+
+      // --- Edit User Modal Toggle & Custom Inputs ---
       const modalEdit = container.querySelector("#admin-edit-user-modal");
       const closeEditModal = () => modalEdit?.classList.add("hidden");
       container.querySelector("#btn-close-edit-user-modal")?.addEventListener("click", closeEditModal);
       container.querySelector("#btn-cancel-edit-user-modal")?.addEventListener("click", closeEditModal);
+
+      // Edit Modal: Role Custom Field
+      const editRoleSelect = container.querySelector("#edit-user-role");
+      const editRoleWrap = container.querySelector("#edit-user-role-custom-wrap");
+      const editRoleInput = container.querySelector("#edit-user-role-custom");
+      const btnToggleEditRole = container.querySelector("#btn-toggle-edit-role");
+      editRoleSelect?.addEventListener("change", () => {
+        if (editRoleSelect.value === "OTHER") {
+          editRoleWrap?.classList.remove("hidden");
+          editRoleInput?.focus();
+        } else {
+          editRoleWrap?.classList.add("hidden");
+        }
+      });
+      btnToggleEditRole?.addEventListener("click", () => {
+        if (editRoleSelect) editRoleSelect.value = "OTHER";
+        editRoleWrap?.classList.remove("hidden");
+        editRoleInput?.focus();
+      });
+
+      // Edit Modal: Department Custom Field
+      const editDeptSelect = container.querySelector("#edit-user-department");
+      const editDeptWrap = container.querySelector("#edit-user-dept-custom-wrap");
+      const editDeptInput = container.querySelector("#edit-user-dept-custom");
+      const btnToggleEditDept = container.querySelector("#btn-toggle-edit-dept");
+      editDeptSelect?.addEventListener("change", () => {
+        if (editDeptSelect.value === "OTHER") {
+          editDeptWrap?.classList.remove("hidden");
+          editDeptInput?.focus();
+        } else {
+          editDeptWrap?.classList.add("hidden");
+        }
+      });
+      btnToggleEditDept?.addEventListener("click", () => {
+        if (editDeptSelect) editDeptSelect.value = "OTHER";
+        editDeptWrap?.classList.remove("hidden");
+        editDeptInput?.focus();
+      });
+
+      // Edit Modal: Designation Custom Field
+      const editDesigSelect = container.querySelector("#edit-user-designation-select");
+      const editDesigWrap = container.querySelector("#edit-user-desig-custom-wrap");
+      const editDesigInput = container.querySelector("#edit-user-designation");
+      const btnToggleEditDesig = container.querySelector("#btn-toggle-edit-desig");
+      editDesigSelect?.addEventListener("change", () => {
+        if (editDesigSelect.value === "OTHER") {
+          editDesigWrap?.classList.remove("hidden");
+          editDesigInput?.focus();
+        } else {
+          editDesigWrap?.classList.add("hidden");
+          if (editDesigInput) editDesigInput.value = editDesigSelect.value;
+        }
+      });
+      btnToggleEditDesig?.addEventListener("click", () => {
+        if (editDesigSelect) editDesigSelect.value = "OTHER";
+        editDesigWrap?.classList.remove("hidden");
+        editDesigInput?.focus();
+      });
+
+      // --- Edit User Buttons Populate & Open ---
       container.querySelectorAll(".btn-edit-user").forEach((btn) => {
         btn.addEventListener("click", () => {
           const uId = btn.getAttribute("data-user-id");
@@ -13378,27 +13599,62 @@ body.lh-erp-body {
           const idBadge = document.getElementById("edit-user-id-badge");
           const nameField = document.getElementById("edit-user-name");
           const pwdField = document.getElementById("edit-user-password");
-          const phoneField = document.getElementById("edit-user-phone");
           const roleField = document.getElementById("edit-user-role");
           const compField = document.getElementById("edit-user-company");
           const deptField = document.getElementById("edit-user-department");
           const desigField = document.getElementById("edit-user-designation");
+          const desigSelect = document.getElementById("edit-user-designation-select");
           const statusField = document.getElementById("edit-user-status");
+
           if (idField) idField.value = user.username || user.id;
           if (idDisplay) idDisplay.value = user.username || user.id;
           if (idBadge) idBadge.textContent = `Username: ${user.username || user.id}`;
           if (nameField) nameField.value = user.name || "";
           if (pwdField) pwdField.value = "";
-          if (phoneField) phoneField.value = user.phone || "";
-          if (roleField) roleField.value = user.role || "Employee";
           if (compField) compField.value = user.companyId || "ALL";
-          if (deptField) deptField.value = user.department || "Operations";
-          if (desigField) desigField.value = user.designation || "";
           if (statusField) statusField.value = user.status || "Active";
+
+          // Populate Role with Custom Support
+          const stdRoles = ["Employee", "ERP Support Team", "Company Admin", "Super Admin"];
+          if (stdRoles.includes(user.role)) {
+            if (roleField) roleField.value = user.role;
+            editRoleWrap?.classList.add("hidden");
+            if (editRoleInput) editRoleInput.value = "";
+          } else {
+            if (roleField) roleField.value = "OTHER";
+            editRoleWrap?.classList.remove("hidden");
+            if (editRoleInput) editRoleInput.value = user.role || "";
+          }
+
+          // Populate Department with Custom Support
+          if (departments.includes(user.department)) {
+            if (deptField) deptField.value = user.department;
+            editDeptWrap?.classList.add("hidden");
+            if (editDeptInput) editDeptInput.value = "";
+          } else {
+            if (deptField) deptField.value = "OTHER";
+            editDeptWrap?.classList.remove("hidden");
+            if (editDeptInput) editDeptInput.value = user.department || "";
+          }
+
+          // Populate Designation with Custom Support
+          const desigOptions = Array.from(desigSelect?.options || []).map((o) => o.value);
+          if (desigOptions.includes(user.designation)) {
+            if (desigSelect) desigSelect.value = user.designation;
+            editDesigWrap?.classList.add("hidden");
+            if (desigField) desigField.value = user.designation || "";
+          } else {
+            if (desigSelect) desigSelect.value = "OTHER";
+            editDesigWrap?.classList.remove("hidden");
+            if (desigField) desigField.value = user.designation || "";
+          }
+
           modalEdit?.classList.remove("hidden");
           nameField?.focus();
         });
       });
+
+      // --- Edit User Form Submission ---
       const formEdit = container.querySelector("#form-admin-edit-user");
       formEdit?.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -13406,19 +13662,39 @@ body.lh-erp-body {
         if (!uId) return;
         const name = document.getElementById("edit-user-name")?.value.trim();
         const pwd = document.getElementById("edit-user-password")?.value.trim();
-        const phone = document.getElementById("edit-user-phone")?.value.trim();
-        const role = document.getElementById("edit-user-role")?.value;
         const companyId = document.getElementById("edit-user-company")?.value;
-        const department = document.getElementById("edit-user-department")?.value;
-        const designation = document.getElementById("edit-user-designation")?.value.trim();
         const status = document.getElementById("edit-user-status")?.value;
+
+        // Role resolution
+        let role = document.getElementById("edit-user-role")?.value;
+        const customRole = document.getElementById("edit-user-role-custom")?.value.trim();
+        if (role === "OTHER" || customRole) {
+          role = customRole || "Employee";
+        }
+        if (!role) role = "Employee";
+
+        // Department resolution
+        let department = document.getElementById("edit-user-department")?.value;
+        const customDept = document.getElementById("edit-user-dept-custom")?.value.trim();
+        if (department === "OTHER" || customDept) {
+          department = customDept || "Operations";
+        }
+        if (!department) department = "Operations";
+        state.addDepartment(department);
+
+        // Designation resolution
+        const desigSelectVal = document.getElementById("edit-user-designation-select")?.value;
+        const customDesig = document.getElementById("edit-user-designation")?.value.trim();
+        let designation = (desigSelectVal === "OTHER" || customDesig) ? customDesig : (desigSelectVal || "");
+        if (!designation) designation = "Staff Member";
+
         if (!name) {
           alert("Please fill in user Full Name.");
           return;
         }
         const updatePayload = {
           name,
-          phone,
+          phone: "",
           role,
           companyId,
           department,
@@ -13439,6 +13715,7 @@ body.lh-erp-body {
         }));
         this.render();
       });
+
       container.querySelectorAll(".btn-delete-user").forEach((btn) => {
         btn.addEventListener("click", () => {
           const uId = btn.getAttribute("data-user-id");
