@@ -53,23 +53,9 @@ if (Test-Path $csc) {
     Write-Host "UMA_Connect_Setup.exe compiled successfully!"
 }
 
-Write-Host "3. Updating APK assets..."
-foreach ($apk in @("UMA Connect.apk", "UMA_Connect.apk", "UMA_Connect_Fresh.apk")) {
-    if (Test-Path $apk) {
-        try {
-            $apkZip = [System.IO.Compression.ZipFile]::Open($apk, [System.IO.Compression.ZipArchiveMode]::Update)
-            $entry = $apkZip.GetEntry("assets/index.html")
-            if ($entry) {
-                $entry.Delete()
-            }
-            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($apkZip, (Resolve-Path "index.html"), "assets/index.html", [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
-            $apkZip.Dispose()
-            Write-Host "  Updated assets/index.html in $apk"
-        } catch {
-            Write-Host "  Could not update ${apk}"
-        }
-    }
-}
+Write-Host "3. Building & Signing Production APKs (v1 + v2 Signed, 4-Byte Aligned)..."
+python build_apk.py
+if ($LASTEXITCODE -ne 0) { throw "Failed to build and sign APKs!" }
 
 Write-Host "4. Packaging UMA_Connect_Share_Package.zip..."
 if (Test-Path "UMA_Connect_Share_Package.zip") {
