@@ -11873,16 +11873,16 @@ body.lh-erp-body {
                 </div>
               </div>
 
-              <!-- Row 2: Reported by name* -->
+              <!-- Row 2: Reported By (User ID)* -->
               <div class="lh-form-row">
-                <label class="lh-form-label" for="tkt-reported-by-name">Reported by name<span class="lh-req">*</span></label>
+                <label class="lh-form-label" for="tkt-username">Reported By (User ID)<span class="lh-req">*</span></label>
                 <div class="lh-form-field-wrap">
-                  <input type="text" id="tkt-reported-by-name" class="lh-full-input" value="" placeholder="Enter reporter name or contact" required autocomplete="off">
-                  <div id="err-tkt-reported-by-name" class="lh-inline-error">Please enter Reported by name*</div>
+                  <input type="text" id="tkt-username" class="lh-full-input" value="" placeholder="Enter User ID" required autocomplete="off">
+                  <div id="err-tkt-username" class="lh-inline-error">Please enter Reported By (User ID)*</div>
                 </div>
               </div>
 
-              <!-- Row 3: Assign To* (Replaces Req. Reported By/Owner*) -->
+              <!-- Row 3: Assign To* -->
               <div class="lh-form-row">
                 <label class="lh-form-label" for="tkt-assign-to">Assign To<span class="lh-req">*</span></label>
                 <div class="lh-form-field-wrap">
@@ -11893,14 +11893,6 @@ body.lh-erp-body {
                     </button>
                   </div>
                   <div id="err-tkt-assign-to" class="lh-inline-error">Please enter Assign To*</div>
-                </div>
-              </div>
-
-              <!-- Row 4: Reported By (User ID) -->
-              <div class="lh-form-row">
-                <label class="lh-form-label" for="tkt-username">Reported By (User ID)</label>
-                <div class="lh-form-field-wrap">
-                  <input type="text" id="tkt-username" class="lh-full-input" value="" placeholder="Enter User ID" autocomplete="off">
                 </div>
               </div>
 
@@ -12080,7 +12072,7 @@ body.lh-erp-body {
           bannerAssignEl.textContent = assignInputEl.value.trim() || "Not Selected";
         }
       });
-      ["#tkt-type-code", "#tkt-reported-by-name", "#tkt-assign-to", "#tkt-solution-code", "#tkt-priority-val", "#tkt-remark"].forEach((sel) => {
+      ["#tkt-type-code", "#tkt-username", "#tkt-assign-to", "#tkt-solution-code", "#tkt-priority-val", "#tkt-remark"].forEach((sel) => {
         const el = container.querySelector(sel);
         el?.addEventListener("input", () => {
           el.classList.remove("lh-field-invalid");
@@ -12346,10 +12338,8 @@ body.lh-erp-body {
       const user = auth.getUser();
       const typeCode = document.getElementById("tkt-type-code")?.value.trim() || "";
       const typeDesc = document.getElementById("tkt-type-desc")?.value.trim() || "";
-      const reportedByName = document.getElementById("tkt-reported-by-name")?.value.trim() || "";
+      const username = document.getElementById("tkt-username")?.value.trim() || "";
       const assignToVal = document.getElementById("tkt-assign-to")?.value.trim() || "";
-      const typedUsername = document.getElementById("tkt-username")?.value.trim() || "";
-      const username = typedUsername || (user ? user.username || user.id : "admin");
       const solutionCode = document.getElementById("tkt-solution-code")?.value.trim() || "";
       const solutionDesc = document.getElementById("tkt-solution-desc")?.value.trim() || "";
       const moduleCode = document.getElementById("tkt-module-code")?.value.trim() || "";
@@ -12372,8 +12362,8 @@ body.lh-erp-body {
       if (!typeCode) {
         firstInvalid = firstInvalid || setFieldError("tkt-type-code", "err-tkt-type", "Please enter Ticket Type*");
       }
-      if (!reportedByName) {
-        firstInvalid = firstInvalid || setFieldError("tkt-reported-by-name", "err-tkt-reported-by-name", "Please enter Reported by name*");
+      if (!username) {
+        firstInvalid = firstInvalid || setFieldError("tkt-username", "err-tkt-username", "Please enter Reported By (User ID)*");
       }
       if (!assignToVal) {
         firstInvalid = firstInvalid || setFieldError("tkt-assign-to", "err-tkt-assign-to", "Please enter Assign To*");
@@ -12415,6 +12405,15 @@ body.lh-erp-body {
       const assignedToId = matchedAssignee ? (matchedAssignee.id || matchedAssignee.username) : "admin";
       const assignedToEmail = matchedAssignee && matchedAssignee.email ? matchedAssignee.email : "admin@erphub.com";
 
+      // Resolve reporter from registered directory if matching
+      const cleanReporter = username.toLowerCase();
+      const matchedReporter = allUsers.find((u) =>
+        (u.username && u.username.toLowerCase() === cleanReporter) ||
+        (u.id && u.id.toLowerCase() === cleanReporter) ||
+        (u.name && u.name.toLowerCase() === cleanReporter)
+      );
+      const reportedByName = matchedReporter ? matchedReporter.name : (user && (user.username === username || user.id === username) && user.name ? user.name : username);
+
       const titlePrefix = moduleDesc || typeDesc || typeCode || "Support Ticket";
       const title = `${titlePrefix}: ${remark.slice(0, 60)}${remark.length > 60 ? "..." : ""}`;
       const newQuery = state.saveQuery({
@@ -12427,8 +12426,8 @@ body.lh-erp-body {
         reportedByName,
         raisedBy: reportedByName,
         raisedByUsername: username,
-        raisedById: user ? user.username || user.id : username,
-        raisedByEmail: user && user.email || `${username}@erphub.com`,
+        raisedById: matchedReporter ? (matchedReporter.username || matchedReporter.id) : (user ? user.username || user.id : username),
+        raisedByEmail: matchedReporter && matchedReporter.email ? matchedReporter.email : (user && user.email ? user.email : `${username}@erphub.com`),
         erpSolution: `${solutionCode}${solutionDesc ? " - " + solutionDesc : ""}`,
         module: moduleDesc || moduleCode || "General",
         moduleCode,
