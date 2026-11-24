@@ -36,6 +36,7 @@ in real-time!
 A) Administrator Access:
    - Username: admin
    - Password: admin123 (or admin)
+   - Email: erp.saapl@gmail.com
    - Access: Full System Control, User Management, Reports & Analytics
 
 B) Plant User Access:
