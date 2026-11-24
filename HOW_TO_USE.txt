@@ -39,8 +39,8 @@ A) Administrator Access:
    - Access: Full System Control, User Management, Reports & Analytics
 
 B) Plant User Access:
-   - Username: mangesh
-   - Password: 9797
+   - Username: Enter your Username (User ID) provisioned by Administrator
+   - Password: Enter password manually
    - Access: Plant Operations & Query Portal
 
 * Note: Passwords must be typed manually on the login screen.
