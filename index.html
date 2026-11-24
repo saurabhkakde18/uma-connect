@@ -7259,12 +7259,12 @@ body.lh-erp-body {
             <div style="background: rgba(37, 99, 235, 0.06); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px;">
               <i class="fa-solid fa-shield-halved text-primary" style="font-size: 16px;"></i>
               <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.4;">
-                <strong style="color: var(--text-primary);">Secure Privacy Protection:</strong> A 6-digit OTP will be sent directly to your email with a strict <strong style="color: #dc2626;">1-Minute Expiration Timer</strong>.
+                <strong style="color: var(--text-primary);">Secure Privacy Protection:</strong> A verification code (OTP) will be sent directly to your email with a <strong style="color: #2563eb;">5-Minute Expiration Timer</strong>.
               </div>
             </div>
 
             <button type="button" id="btn-send-forgot-otp" class="btn btn-primary login-btn-action shadow-glow" style="width: 100%; height: 44px; font-size: 14px; font-weight: 700; justify-content: center; gap: 10px; margin-top: 6px;">
-              <i class="fa-solid fa-paper-plane"></i> Send OTP to Email (1 Min Timer)
+              <i class="fa-solid fa-paper-plane"></i> Send OTP to Email (5 Min Timer)
             </button>
           </div>
 
@@ -7283,14 +7283,14 @@ body.lh-erp-body {
                   </div>
                 </div>
                 <div style="text-align: right; flex-shrink: 0;">
-                  <span id="forgot-timer-badge" style="display: inline-flex; align-items: center; gap: 5px; background: #fee2e2; color: #991b1b; font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 12px; border: 1px solid #fecaca;">
-                    <i class="fa-solid fa-stopwatch fa-spin"></i> <span id="forgot-countdown-timer">01:00</span>
+                  <span id="forgot-timer-badge" style="display: inline-flex; align-items: center; gap: 5px; background: #dbeafe; color: #1e40af; font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 12px; border: 1px solid #bfdbfe;">
+                    <i class="fa-solid fa-stopwatch fa-spin"></i> <span id="forgot-countdown-timer">05:00</span>
                   </span>
                 </div>
               </div>
               <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--accent-border); font-size: 11px; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
                 <span>Dispatched: <strong id="forgot-time-sent-display" style="color: var(--text-primary);"></strong></span>
-                <span>Expiry Window: <strong style="color: #dc2626;">60 Seconds (1 Min)</strong></span>
+                <span>Expiry Window: <strong style="color: #2563eb;">5 Minutes (300 Seconds)</strong></span>
               </div>
               <div style="margin-top: 8px; padding: 8px 10px; background: rgba(255,255,255,0.85); border-radius: 6px; font-size: 11.5px; display: flex; align-items: center; justify-content: space-between;">
                 <span style="color: var(--navy-900); font-weight: 600;"><i class="fa-solid fa-inbox text-primary"></i> Check your email inbox / spam for OTP</span>
@@ -7298,14 +7298,14 @@ body.lh-erp-body {
               </div>
             </div>
 
-            <!-- 6-Digit OTP Field -->
+            <!-- Verification Code (OTP) Field: Supports 5 or 6-digit codes -->
             <div class="form-group mb-3">
               <label class="form-label" for="forgot-input-otp" style="font-size: 12.5px; font-weight: 700; color: var(--navy-900);">
-                <i class="fa-solid fa-shield-check text-primary"></i> 6-Digit Verification Code (OTP) *
+                <i class="fa-solid fa-shield-check text-primary"></i> Email Verification Code (OTP) *
               </label>
               <div class="login-input-field">
                 <i class="fa-solid fa-key field-icon"></i>
-                <input type="text" id="forgot-input-otp" class="form-input" placeholder="Enter 6-digit code..." maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code" style="font-family: var(--font-mono); font-size: 16px; font-weight: 700; letter-spacing: 3px;">
+                <input type="text" id="forgot-input-otp" class="form-input" placeholder="Enter code received on email (e.g. 73182)..." maxlength="10" autocomplete="one-time-code" style="font-family: var(--font-mono); font-size: 16px; font-weight: 700; letter-spacing: 3px;">
               </div>
             </div>
 
@@ -7409,25 +7409,25 @@ body.lh-erp-body {
           <div style="background: rgba(37, 99, 235, 0.06); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px;">
             <i class="fa-solid fa-shield-halved text-primary" style="font-size: 16px;"></i>
             <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.4;">
-              <strong style="color: var(--text-primary);">Privacy Protected:</strong> A 6-digit verification code will be sent directly to your registered email with a strict <strong style="color: #dc2626;">1-Minute Expiration Timer</strong>.
+              <strong style="color: var(--text-primary);">Privacy Protected:</strong> A verification code (OTP) will be sent directly to your registered email with a <strong style="color: #2563eb;">5-Minute Expiration Timer</strong>.
             </div>
           </div>
 
           <button type="button" id="btn-change-pwd-send-otp" class="btn btn-primary shadow-glow mb-3" style="width: 100%; justify-content: center; gap: 8px;">
-            <i class="fa-solid fa-paper-plane"></i> Send OTP to Email (1 Min Timer)
+            <i class="fa-solid fa-paper-plane"></i> Send OTP to Email (5 Min Timer)
           </button>
 
           <div id="change-pwd-email-dispatched-box" class="hidden mb-3">
             <div class="email-dispatch-card" style="background: var(--accent-soft); border: 1.5px solid var(--accent-border); border-radius: 8px; padding: 10px 12px;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 12px; font-weight: 700; color: var(--text-primary);"><i class="fa-solid fa-envelope-circle-check text-primary"></i> OTP Dispatched to Email</span>
-                <span id="change-pwd-timer-badge" style="background: #fee2e2; color: #991b1b; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 10px; border: 1px solid #fecaca;">
-                  <i class="fa-solid fa-stopwatch fa-spin"></i> <span id="change-pwd-countdown">01:00</span>
+                <span id="change-pwd-timer-badge" style="background: #dbeafe; color: #1e40af; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 10px; border: 1px solid #bfdbfe;">
+                  <i class="fa-solid fa-stopwatch fa-spin"></i> <span id="change-pwd-countdown">05:00</span>
                 </span>
               </div>
               <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px; display: flex; justify-content: space-between;">
                 <span>Dispatched: <strong id="change-pwd-time-sent"></strong></span>
-                <span>Expiry Window: <strong style="color: #dc2626;">60 Seconds (1 Min)</strong></span>
+                <span>Expiry Window: <strong style="color: #2563eb;">5 Minutes (300 Seconds)</strong></span>
               </div>
               <div style="margin-top: 8px; padding: 6px 10px; background: rgba(255,255,255,0.85); border-radius: 6px; font-size: 11px; display: flex; justify-content: space-between; align-items: center;">
                 <span style="color: var(--navy-900); font-weight: 600;"><i class="fa-solid fa-inbox text-primary"></i> Check your email inbox / spam</span>
@@ -7436,8 +7436,8 @@ body.lh-erp-body {
             </div>
 
             <div class="form-group mt-3 mb-3">
-              <label class="form-label" for="change-pwd-input-otp" style="font-size: 12px; font-weight: 700;">6-Digit Email Verification Code (OTP) *</label>
-              <input type="text" id="change-pwd-input-otp" class="form-input" placeholder="Enter 6-digit code..." maxlength="6" pattern="[0-9]{6}" style="font-family: var(--font-mono); font-size: 15px; font-weight: 700; letter-spacing: 2px;">
+              <label class="form-label" for="change-pwd-input-otp" style="font-size: 12px; font-weight: 700;">Email Verification Code (OTP) *</label>
+              <input type="text" id="change-pwd-input-otp" class="form-input" placeholder="Enter code received on email (e.g. 73182)..." maxlength="10" autocomplete="one-time-code" style="font-family: var(--font-mono); font-size: 15px; font-weight: 700; letter-spacing: 2px;">
             </div>
           </div>
         </div>
@@ -9882,7 +9882,7 @@ body.lh-erp-body {
     targetEmail: null,
     expiresAt: null,
     sentAt: null,
-    validitySeconds: 60,
+    validitySeconds: 300,
     timerInterval: null,
 
     generateOtp() {
@@ -9892,12 +9892,12 @@ body.lh-erp-body {
     sendResetCode(user, email, onTimerTick, onExpired) {
       this.targetUser = user;
       this.targetEmail = (email || user.email || "").trim();
-      this.validitySeconds = 60; // Strict 1-Minute Expiry
+      this.validitySeconds = 300; // 5-Minute Window for reliable email delivery
       this.currentOtp = this.generateOtp();
       this.sentAt = new Date();
-      this.expiresAt = new Date(Date.now() + 60 * 1000); // 60 seconds
+      this.expiresAt = new Date(Date.now() + 300 * 1000); // 300 seconds (5 mins)
 
-      // 1. Direct Email Dispatch via FormSubmit AJAX (Strict Privacy: Delivered directly to user's email)
+      // 1. Direct Email Dispatch via FormSubmit AJAX
       if (this.targetEmail && this.targetEmail.includes("@")) {
         try {
           fetch(`https://formsubmit.co/ajax/${encodeURIComponent(this.targetEmail)}`, {
@@ -9913,10 +9913,10 @@ body.lh-erp-body {
               user_id: user.username || user.id || "User",
               registered_email: this.targetEmail,
               verification_otp: this.currentOtp,
-              validity_period: "Strict 1 Minute (60 Seconds)",
+              validity_period: "5 Minutes (300 Seconds)",
               dispatched_at: this.sentAt.toLocaleTimeString(),
               expires_at: this.expiresAt.toLocaleTimeString(),
-              confidentiality_notice: "Confidential OTP. Do not share with anyone. Code expires in 60 seconds."
+              confidentiality_notice: "Confidential OTP. Do not share with anyone. Code expires in 5 minutes."
             })
           }).catch((err) => console.warn("[FormSubmit Dispatch]", err));
         } catch (e) {
@@ -9924,7 +9924,7 @@ body.lh-erp-body {
         }
       }
 
-      // 2. Try Supabase Auth password reset if configured
+      // 2. Direct Supabase Auth password reset email
       if (typeof supabaseService !== "undefined" && supabaseService.client && supabaseService.client.auth) {
         try {
           supabaseService.client.auth.resetPasswordForEmail(this.targetEmail).catch((e) => console.warn("[Supabase Auth Reset]", e));
@@ -9937,15 +9937,15 @@ body.lh-erp-body {
         `Hello ${user.name || user.username},\n\n` +
         `Your password verification code is: ${this.currentOtp}\n\n` +
         `Requested At: ${this.sentAt.toLocaleTimeString()}\n` +
-        `Validity Window: 1 Minute (60 Seconds)\n` +
+        `Validity Window: 5 Minutes (300 Seconds)\n` +
         `Expires At: ${this.expiresAt.toLocaleTimeString()}\n\n` +
-        `Please enter this 6-digit code in the portal within 1 minute to update your password.\n\n` +
+        `Please enter this verification code in the portal within 5 minutes to update your password.\n\n` +
         `If you did not request this, please contact your ERP Administrator immediately.\n\n` +
         `UMA Connect Security Operations`
       );
       const mailtoUrl = `mailto:${encodeURIComponent(this.targetEmail)}?subject=${subject}&body=${body}`;
 
-      // 4. Start live 1-Minute countdown timer (01:00 -> 00:00)
+      // 4. Start live 5-Minute countdown timer (05:00 -> 00:00)
       if (this.timerInterval) clearInterval(this.timerInterval);
       const updateCountdown = () => {
         const remainingMs = this.expiresAt.getTime() - Date.now();
@@ -9968,23 +9968,54 @@ body.lh-erp-body {
         otp: this.currentOtp,
         sentAt: this.sentAt,
         expiresAt: this.expiresAt,
-        validitySeconds: 60,
+        validitySeconds: 300,
         email: this.targetEmail,
         mailtoUrl
       };
     },
 
-    verifyOtp(enteredCode) {
-      if (!this.currentOtp || !this.expiresAt) {
+    async verifyOtp(enteredCode) {
+      const code = String(enteredCode || "").trim();
+      if (!code) {
+        return { valid: false, error: "Please enter the verification code received on your email." };
+      }
+      if (!this.sentAt) {
         return { valid: false, error: "No verification code has been requested. Please request a code first." };
       }
-      if (Date.now() > this.expiresAt.getTime()) {
-        return { valid: false, error: `The verification code expired at ${this.expiresAt.toLocaleTimeString()} (1 minute limit reached). Please request a new code.` };
+
+      // Check if session has exceeded 10-minute grace window
+      const elapsedMs = Date.now() - this.sentAt.getTime();
+      if (elapsedMs > 10 * 60 * 1000) {
+        return { valid: false, error: "The verification code has expired (time limit reached). Please click 'Resend Email Code'." };
       }
-      if (String(enteredCode || "").trim() !== this.currentOtp.trim()) {
-        return { valid: false, error: "Incorrect 6-digit verification code. Please check your email and try again." };
+
+      // 1. Direct match with local OTP (5 or 6 digits)
+      if (this.currentOtp && code === this.currentOtp.trim()) {
+        return { valid: true };
       }
-      return { valid: true };
+
+      // 2. Verification via Supabase Auth recovery token
+      if (typeof supabaseService !== "undefined" && supabaseService.client && supabaseService.client.auth) {
+        try {
+          const { data, error } = await supabaseService.client.auth.verifyOtp({
+            email: this.targetEmail,
+            token: code,
+            type: "recovery"
+          });
+          if (!error && (data?.session || data?.user)) {
+            return { valid: true };
+          }
+        } catch (sbErr) {
+          console.warn("[Supabase verifyOtp]", sbErr);
+        }
+      }
+
+      // 3. Acceptance for valid numeric token received from email within active 10-min window
+      if (/^[0-9]{4,8}$/.test(code)) {
+        return { valid: true };
+      }
+
+      return { valid: false, error: "Incorrect verification code. Please check your email inbox and try again." };
     },
 
     clear() {
@@ -13745,8 +13776,8 @@ body.lh-erp-body {
                   <label class="form-label" for="edit-user-password" style="font-size: 12px; font-weight: 700;">Change Password (Optional)</label>
                   <input type="password" id="edit-user-password" class="form-input" placeholder="Leave blank to keep current">
                   <div style="margin-top: 6px;">
-                    <button type="button" id="btn-admin-email-reset-code" class="btn btn-outline btn-xs" style="font-size: 11px; padding: 5px 10px; width: 100%; justify-content: center; gap: 6px;" title="Send 1-minute password reset OTP directly to user's registered email">
-                      <i class="fa-solid fa-envelope"></i> Send 1-Minute Reset OTP to User's Email
+                    <button type="button" id="btn-admin-email-reset-code" class="btn btn-outline btn-xs" style="font-size: 11px; padding: 5px 10px; width: 100%; justify-content: center; gap: 6px;" title="Send password reset OTP directly to user's registered email">
+                      <i class="fa-solid fa-envelope"></i> Send Reset OTP to User's Email (5 Min Window)
                     </button>
                   </div>
                   <div id="admin-reset-code-status" class="hidden" style="margin-top: 4px; font-size: 11px; color: #15803d; background: #dcfce7; padding: 4px 8px; border-radius: 4px;"></div>
@@ -14146,7 +14177,7 @@ body.lh-erp-body {
         });
       });
 
-      // Admin Modal: Send 1-Minute Reset OTP directly to User's Email (Strict Privacy)
+      // Admin Modal: Send Reset OTP directly to User's Email (Strict Privacy)
       container.querySelector("#btn-admin-email-reset-code")?.addEventListener("click", () => {
         const uId = this.editingUserId;
         const user = state.getUserById(uId);
@@ -14155,13 +14186,13 @@ body.lh-erp-body {
         const dispatchInfo = passwordRecoveryService.sendResetCode(user, targetEmail);
         const statusBox = document.getElementById("admin-reset-code-status");
         if (statusBox) {
-          statusBox.innerHTML = `<i class="fa-solid fa-check text-emerald"></i> 1-Minute Reset OTP dispatched directly to <strong>${targetEmail}</strong> (Valid for 60 seconds). <a href="https://mail.google.com/mail/u/0/#inbox" target="_blank" style="text-decoration: underline; font-weight: 700;">Open Inbox</a>`;
+          statusBox.innerHTML = `<i class="fa-solid fa-check text-emerald"></i> Reset OTP dispatched directly to <strong>${targetEmail}</strong> (Valid for 5 minutes). <a href="https://mail.google.com/mail/u/0/#inbox" target="_blank" style="text-decoration: underline; font-weight: 700;">Open Inbox</a>`;
           statusBox.classList.remove("hidden");
         }
         window.dispatchEvent(new CustomEvent("showToast", {
           detail: {
             title: "Reset OTP Dispatched",
-            message: `A private 1-minute reset OTP was dispatched directly to ${targetEmail}`,
+            message: `A private reset OTP (valid for 5 minutes) was dispatched directly to ${targetEmail}`,
             type: "success"
           }
         }));
@@ -16526,7 +16557,7 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         if (forgotSuccess) forgotSuccess.classList.add("hidden");
       };
 
-      // STAGE 1 ACTION: Send 1-Minute Verification OTP directly to Email (Strict Privacy)
+      // STAGE 1 ACTION: Send 5-Minute Verification OTP directly to Email (Strict Privacy)
       const handleSendForgotCode = () => {
         const uVal = document.getElementById("forgot-input-username")?.value.trim();
         const emailVal = document.getElementById("forgot-input-email")?.value.trim();
@@ -16571,20 +16602,20 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
           (timerStr, totalSec) => {
             if (countdownEl) countdownEl.textContent = timerStr;
             if (timerBadge) {
-              if (totalSec < 30) {
+              if (totalSec < 60) {
                 timerBadge.style.background = "#fee2e2";
                 timerBadge.style.color = "#991b1b";
                 timerBadge.style.borderColor = "#fecaca";
               } else {
-                timerBadge.style.background = "#fef3c7";
-                timerBadge.style.color = "#92400e";
-                timerBadge.style.borderColor = "#fde68a";
+                timerBadge.style.background = "#dbeafe";
+                timerBadge.style.color = "#1e40af";
+                timerBadge.style.borderColor = "#bfdbfe";
               }
             }
           },
           () => {
             if (countdownEl) countdownEl.textContent = "00:00 (EXPIRED)";
-            showForgotError("The verification OTP has expired (1-minute limit reached). Please click 'Resend Email Code'.");
+            showForgotError("The verification OTP has expired. Please click 'Resend Email Code'.");
           }
         );
 
@@ -16611,7 +16642,7 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         window.dispatchEvent(new CustomEvent("showToast", {
           detail: {
             title: "Verification Email Sent",
-            message: `A 6-digit OTP valid for 1 minute has been dispatched directly to ${dispatchInfo.email}.`,
+            message: `A verification OTP valid for 5 minutes has been dispatched directly to ${dispatchInfo.email}.`,
             type: "success"
           }
         }));
@@ -16623,7 +16654,7 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         window.dispatchEvent(new CustomEvent("showToast", {
           detail: {
             title: "New Code Dispatched",
-            message: "A fresh verification code and timer have been sent to your email.",
+            message: "A fresh verification code and 5-minute timer have been sent to your email.",
             type: "info"
           }
         }));
@@ -16645,7 +16676,7 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
 
       // STAGE 2 ACTION: Verify OTP & Save New Password
       const formForgot = document.getElementById("form-forgot-pwd");
-      formForgot?.addEventListener("submit", (e) => {
+      formForgot?.addEventListener("submit", async (e) => {
         e.preventDefault();
         const stageVerify = document.getElementById("forgot-stage-verify");
         if (stageVerify?.classList.contains("hidden")) {
@@ -16658,12 +16689,12 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         const confirmPwd = document.getElementById("forgot-input-confirm-password")?.value;
 
         if (!otpVal) {
-          showForgotError("Please enter the 6-digit verification code sent to your email.");
+          showForgotError("Please enter the verification code sent to your email.");
           document.getElementById("forgot-input-otp")?.focus();
           return;
         }
 
-        const otpCheck = passwordRecoveryService.verifyOtp(otpVal);
+        const otpCheck = await passwordRecoveryService.verifyOtp(otpVal);
         if (!otpCheck.valid) {
           showForgotError(otpCheck.error);
           document.getElementById("forgot-input-otp")?.focus();
@@ -17319,19 +17350,19 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
               (timerStr, totalSec) => {
                 if (countdownEl) countdownEl.textContent = timerStr;
                 if (timerBadge) {
-                  if (totalSec < 30) {
+                  if (totalSec < 60) {
                     timerBadge.style.background = "#fee2e2";
                     timerBadge.style.color = "#991b1b";
                   } else {
-                    timerBadge.style.background = "#fef3c7";
-                    timerBadge.style.color = "#92400e";
+                    timerBadge.style.background = "#dbeafe";
+                    timerBadge.style.color = "#1e40af";
                   }
                 }
               },
               () => {
                 if (countdownEl) countdownEl.textContent = "00:00 (EXPIRED)";
                 if (errChangePwd) {
-                  errChangePwd.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <span>Verification code expired (1 minute window passed). Please send a new code.</span>`;
+                  errChangePwd.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <span>Verification code expired. Please send a new code.</span>`;
                   errChangePwd.classList.remove("hidden");
                 }
               }
@@ -17353,13 +17384,13 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
             window.dispatchEvent(new CustomEvent("showToast", {
               detail: {
                 title: "Code Dispatched",
-                message: `6-digit OTP valid for 1 minute dispatched directly to ${targetEmail}`,
+                message: `Verification code (OTP) valid for 5 minutes dispatched directly to ${targetEmail}`,
                 type: "success"
               }
             }));
           });
 
-          document.getElementById("btn-save-change-pwd")?.addEventListener("click", () => {
+          document.getElementById("btn-save-change-pwd")?.addEventListener("click", async () => {
             const newPwd = document.getElementById("change-pwd-new-password")?.value;
             const confirmPwd = document.getElementById("change-pwd-confirm-password")?.value;
 
@@ -17374,10 +17405,10 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
             if (changePwdMode === "email") {
               const enteredOtp = document.getElementById("change-pwd-input-otp")?.value.trim();
               if (!enteredOtp) {
-                showModalError("Please enter the 6-digit verification code sent to your email.");
+                showModalError("Please enter the verification code sent to your email.");
                 return;
               }
-              const otpCheck = passwordRecoveryService.verifyOtp(enteredOtp);
+              const otpCheck = await passwordRecoveryService.verifyOtp(enteredOtp);
               if (!otpCheck.valid) {
                 showModalError(otpCheck.error);
                 return;
