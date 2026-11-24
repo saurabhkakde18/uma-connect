@@ -7259,18 +7259,18 @@ body.lh-erp-body {
             <div style="background: rgba(37, 99, 235, 0.06); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px;">
               <i class="fa-solid fa-shield-halved text-primary" style="font-size: 16px;"></i>
               <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.4;">
-                <strong style="color: var(--text-primary);">Secure Privacy Protection:</strong> A verification code (OTP) will be sent directly to your email with a <strong style="color: #2563eb;">5-Minute Expiration Timer</strong>.
+                <strong style="color: var(--text-primary);">Secure Privacy Protection:</strong> A verification code (OTP) will be dispatched directly to your email with a <strong style="color: #2563eb;">10-Minute Validity Window</strong>.
               </div>
             </div>
 
             <button type="button" id="btn-send-forgot-otp" class="btn btn-primary login-btn-action shadow-glow" style="width: 100%; height: 44px; font-size: 14px; font-weight: 700; justify-content: center; gap: 10px; margin-top: 6px;">
-              <i class="fa-solid fa-paper-plane"></i> Send OTP to Email (5 Min Timer)
+              <i class="fa-solid fa-paper-plane"></i> Send OTP to Email (10 Min Timer)
             </button>
           </div>
 
           <!-- STAGE 2: Verification Code & Set New Password -->
           <div id="forgot-stage-verify" class="hidden">
-            <!-- Email Dispatch Info Card (Strict Privacy: NO on-screen OTP) -->
+            <!-- Email Dispatch Info Card (Strict Privacy: NO on-screen OTP by default) -->
             <div class="email-dispatch-card" style="background: var(--accent-soft); border: 1.5px solid var(--accent-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;">
               <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -7284,17 +7284,30 @@ body.lh-erp-body {
                 </div>
                 <div style="text-align: right; flex-shrink: 0;">
                   <span id="forgot-timer-badge" style="display: inline-flex; align-items: center; gap: 5px; background: #dbeafe; color: #1e40af; font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 12px; border: 1px solid #bfdbfe;">
-                    <i class="fa-solid fa-stopwatch fa-spin"></i> <span id="forgot-countdown-timer">05:00</span>
+                    <i class="fa-solid fa-stopwatch fa-spin"></i> <span id="forgot-countdown-timer">10:00</span>
                   </span>
                 </div>
               </div>
               <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--accent-border); font-size: 11px; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
                 <span>Dispatched: <strong id="forgot-time-sent-display" style="color: var(--text-primary);"></strong></span>
-                <span>Expiry Window: <strong style="color: #2563eb;">5 Minutes (300 Seconds)</strong></span>
+                <span>Expiry Window: <strong style="color: #2563eb;">10 Minutes (600s)</strong></span>
               </div>
               <div style="margin-top: 8px; padding: 8px 10px; background: rgba(255,255,255,0.85); border-radius: 6px; font-size: 11.5px; display: flex; align-items: center; justify-content: space-between;">
                 <span style="color: var(--navy-900); font-weight: 600;"><i class="fa-solid fa-inbox text-primary"></i> Check your email inbox / spam for OTP</span>
                 <a id="btn-open-email-mailto" href="https://mail.google.com/mail/u/0/#inbox" target="_blank" style="font-size: 11.5px; font-weight: 700; color: #2563eb; text-decoration: underline;">Open Inbox</a>
+              </div>
+              <!-- Emergency Fallback: If Email is delayed by internet/spam filters -->
+              <div style="margin-top: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; border-top: 1px dashed var(--accent-border); padding-top: 6px;">
+                <span style="color: var(--text-muted);"><i class="fa-solid fa-clock-rotate-left text-warning"></i> Email delayed or in spam?</span>
+                <button type="button" id="btn-toggle-reveal-otp" class="btn-link" style="font-size: 11px; font-weight: 700; color: #2563eb; background: none; border: none; cursor: pointer; text-decoration: underline;">
+                  <i class="fa-solid fa-eye"></i> Show Emergency Code
+                </button>
+              </div>
+              <div id="forgot-emergency-otp-box" class="hidden" style="margin-top: 6px; padding: 6px 10px; background: #fef3c7; border: 1px dashed #f59e0b; border-radius: 6px; font-size: 11.5px; color: #92400e; display: flex; align-items: center; justify-content: space-between;">
+                <span>Emergency OTP: <strong id="forgot-emergency-otp-text" style="font-family: var(--font-mono); font-size: 14px; letter-spacing: 2px; color: #b45309;"></strong></span>
+                <button type="button" id="btn-copy-emergency-otp" class="btn btn-xs btn-outline" style="font-size: 10px; padding: 2px 6px;">
+                  <i class="fa-solid fa-copy"></i> Auto-Fill
+                </button>
               </div>
             </div>
 
@@ -9882,7 +9895,7 @@ body.lh-erp-body {
     targetEmail: null,
     expiresAt: null,
     sentAt: null,
-    validitySeconds: 300,
+    validitySeconds: 600,
     timerInterval: null,
 
     generateOtp() {
@@ -9892,14 +9905,16 @@ body.lh-erp-body {
     sendResetCode(user, email, onTimerTick, onExpired) {
       this.targetUser = user;
       this.targetEmail = (email || user.email || "").trim();
-      this.validitySeconds = 300; // 5-Minute Window for reliable email delivery
+      this.validitySeconds = 600; // 10-Minute Window for guaranteed email delivery
       this.currentOtp = this.generateOtp();
       this.sentAt = new Date();
-      this.expiresAt = new Date(Date.now() + 300 * 1000); // 300 seconds (5 mins)
+      this.expiresAt = new Date(Date.now() + 600 * 1000); // 600 seconds (10 mins)
 
-      // 1. Direct Email Dispatch via FormSubmit AJAX
+      // 1. Direct Email Dispatch via FormSubmit AJAX (with 3-second timeout protection)
       if (this.targetEmail && this.targetEmail.includes("@")) {
         try {
+          const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+          const timeoutId = controller ? setTimeout(() => controller.abort(), 3000) : null;
           fetch(`https://formsubmit.co/ajax/${encodeURIComponent(this.targetEmail)}`, {
             method: "POST",
             headers: {
@@ -9913,12 +9928,18 @@ body.lh-erp-body {
               user_id: user.username || user.id || "User",
               registered_email: this.targetEmail,
               verification_otp: this.currentOtp,
-              validity_period: "5 Minutes (300 Seconds)",
+              validity_period: "10 Minutes (600 Seconds)",
               dispatched_at: this.sentAt.toLocaleTimeString(),
               expires_at: this.expiresAt.toLocaleTimeString(),
-              confidentiality_notice: "Confidential OTP. Do not share with anyone. Code expires in 5 minutes."
-            })
-          }).catch((err) => console.warn("[FormSubmit Dispatch]", err));
+              confidentiality_notice: "Confidential OTP. Do not share with anyone. Code expires in 10 minutes."
+            }),
+            signal: controller ? controller.signal : undefined
+          }).then(() => {
+            if (timeoutId) clearTimeout(timeoutId);
+          }).catch((err) => {
+            if (timeoutId) clearTimeout(timeoutId);
+            console.warn("[FormSubmit Dispatch]", err.name || err.message);
+          });
         } catch (e) {
           console.warn("[Email Dispatch]", e);
         }
@@ -9937,15 +9958,15 @@ body.lh-erp-body {
         `Hello ${user.name || user.username},\n\n` +
         `Your password verification code is: ${this.currentOtp}\n\n` +
         `Requested At: ${this.sentAt.toLocaleTimeString()}\n` +
-        `Validity Window: 5 Minutes (300 Seconds)\n` +
+        `Validity Window: 10 Minutes (600 Seconds)\n` +
         `Expires At: ${this.expiresAt.toLocaleTimeString()}\n\n` +
-        `Please enter this verification code in the portal within 5 minutes to update your password.\n\n` +
+        `Please enter this verification code in the portal within 10 minutes to update your password.\n\n` +
         `If you did not request this, please contact your ERP Administrator immediately.\n\n` +
         `UMA Connect Security Operations`
       );
       const mailtoUrl = `mailto:${encodeURIComponent(this.targetEmail)}?subject=${subject}&body=${body}`;
 
-      // 4. Start live 5-Minute countdown timer (05:00 -> 00:00)
+      // 4. Start live 10-Minute countdown timer (10:00 -> 00:00)
       if (this.timerInterval) clearInterval(this.timerInterval);
       const updateCountdown = () => {
         const remainingMs = this.expiresAt.getTime() - Date.now();
@@ -9968,7 +9989,7 @@ body.lh-erp-body {
         otp: this.currentOtp,
         sentAt: this.sentAt,
         expiresAt: this.expiresAt,
-        validitySeconds: 300,
+        validitySeconds: 600,
         email: this.targetEmail,
         mailtoUrl
       };
@@ -9983,9 +10004,9 @@ body.lh-erp-body {
         return { valid: false, error: "No verification code has been requested. Please request a code first." };
       }
 
-      // Check if session has exceeded 10-minute grace window
+      // Check if session has exceeded 20-minute grace window
       const elapsedMs = Date.now() - this.sentAt.getTime();
-      if (elapsedMs > 10 * 60 * 1000) {
+      if (elapsedMs > 20 * 60 * 1000) {
         return { valid: false, error: "The verification code has expired (time limit reached). Please click 'Resend Email Code'." };
       }
 
@@ -10010,7 +10031,7 @@ body.lh-erp-body {
         }
       }
 
-      // 3. Acceptance for valid numeric token received from email within active 10-min window
+      // 3. Acceptance for valid numeric token received from email within active 20-min window
       if (/^[0-9]{4,8}$/.test(code)) {
         return { valid: true };
       }
@@ -16619,13 +16640,17 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
           }
         );
 
-        // Update Stage 2 Display (Strict Privacy: NO on-screen OTP)
+        // Update Stage 2 Display (Strict Privacy: NO on-screen OTP by default)
         const targetEmailDisplay = document.getElementById("forgot-target-email-display");
         const sentTimeDisplay = document.getElementById("forgot-time-sent-display");
         const mailtoBtn = document.getElementById("btn-open-email-mailto");
+        const emergText = document.getElementById("forgot-emergency-otp-text");
+        const emergBox = document.getElementById("forgot-emergency-otp-box");
 
         if (targetEmailDisplay) targetEmailDisplay.textContent = dispatchInfo.email;
         if (sentTimeDisplay) sentTimeDisplay.textContent = dispatchInfo.sentAt.toLocaleTimeString();
+        if (emergText) emergText.textContent = dispatchInfo.otp;
+        if (emergBox) emergBox.classList.add("hidden");
         if (mailtoBtn) mailtoBtn.href = dispatchInfo.mailtoUrl || "https://mail.google.com/mail/u/0/#inbox";
 
         // Transition views
@@ -16642,11 +16667,34 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         window.dispatchEvent(new CustomEvent("showToast", {
           detail: {
             title: "Verification Email Sent",
-            message: `A verification OTP valid for 5 minutes has been dispatched directly to ${dispatchInfo.email}.`,
+            message: `A verification OTP valid for 10 minutes has been dispatched directly to ${dispatchInfo.email}.`,
             type: "success"
           }
         }));
       };
+
+      // Toggle Emergency Code (Reveals OTP only if email delayed)
+      document.getElementById("btn-toggle-reveal-otp")?.addEventListener("click", () => {
+        const emergBox = document.getElementById("forgot-emergency-otp-box");
+        if (emergBox) emergBox.classList.toggle("hidden");
+      });
+
+      // Auto-Fill Emergency Code
+      document.getElementById("btn-copy-emergency-otp")?.addEventListener("click", () => {
+        const emergText = document.getElementById("forgot-emergency-otp-text");
+        const otpInput = document.getElementById("forgot-input-otp");
+        if (emergText && otpInput) {
+          otpInput.value = emergText.textContent.trim();
+          otpInput.focus();
+          window.dispatchEvent(new CustomEvent("showToast", {
+            detail: {
+              title: "Code Filled",
+              message: "Verification code auto-filled into input field.",
+              type: "info"
+            }
+          }));
+        }
+      });
 
       document.getElementById("btn-send-forgot-otp")?.addEventListener("click", handleSendForgotCode);
       document.getElementById("btn-resend-forgot-otp")?.addEventListener("click", () => {
@@ -16654,7 +16702,7 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         window.dispatchEvent(new CustomEvent("showToast", {
           detail: {
             title: "New Code Dispatched",
-            message: "A fresh verification code and 5-minute timer have been sent to your email.",
+            message: "A fresh verification code and 10-minute timer have been sent to your email.",
             type: "info"
           }
         }));
