@@ -44,4 +44,24 @@ B) Plant User Access:
    - Access: Plant Operations & Query Portal
 
 * Note: Passwords must be typed manually on the login screen.
+
+--------------------------------------------------------------------------------
+4. PASSWORD RESET & TIME OPTION (EMAIL VERIFICATION)
+--------------------------------------------------------------------------------
+A) On Sign In Screen ("Forgot Password?"):
+   - Click "Forgot Password?" below the password field.
+   - Enter your Username (User ID) and registered corporate/plant email.
+   - Select the Code Validity / Expiration Time:
+     * 5 Minutes (Quick Verification)
+     * 10 Minutes (Standard Security)
+     * 15 Minutes (Recommended)
+     * 30 Minutes (Extended Window)
+     * 60 Minutes (1 Hour)
+   - Click "Send Verification Code to Email".
+   - An email with a 6-digit OTP and live expiration countdown timer will be sent.
+   - Enter the 6-digit code before the timer expires and save your new password.
+
+B) Inside the Portal ("Change Password"):
+   - Click your User Avatar in the top-right header and select "Change Password".
+   - Choose "Via Email Verification Code" with your chosen validity time or verify directly with your current password.
 ================================================================================
