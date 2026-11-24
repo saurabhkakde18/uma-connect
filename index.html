@@ -5614,10 +5614,16 @@ body.lh-erp-body {
    ========================================================================== */
 /* Print Stylesheet for UMA Connect Tickets & Reports */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm 8mm 10mm;
+  }
+
   body {
     background: #ffffff !important;
     color: #000000 !important;
-    font-size: 11pt;
+    font-size: 9.5pt !important;
+    line-height: 1.35 !important;
   }
 
   .app-sidebar,
@@ -5631,6 +5637,16 @@ body.lh-erp-body {
   .comments-composer,
   .quick-status-bar,
   .header-actions {
+    display: none !important;
+  }
+
+  /* When printing ticket modal, isolate it so background app layout does not print */
+  body.printing-ticket .app-layout,
+  body.printing-ticket .app-main-wrapper,
+  body.printing-ticket .main-content,
+  body:has(#print-ticket-modal:not(.hidden)) .app-layout,
+  body:has(#print-ticket-modal:not(.hidden)) .app-main-wrapper,
+  body:has(#print-ticket-modal:not(.hidden)) .main-content {
     display: none !important;
   }
 
@@ -5666,7 +5682,7 @@ body.lh-erp-body {
 
   /* Official Ticket Layout */
   .print-document {
-    padding: 20px;
+    padding: 10px 14px !important;
     font-family: 'Plus Jakarta Sans', sans-serif;
     color: #111827;
   }
@@ -5676,27 +5692,20 @@ body.lh-erp-body {
     justify-content: space-between;
     align-items: flex-start;
     border-bottom: 2px solid #000000;
-    padding-bottom: 12px;
+    padding-bottom: 8px !important;
   }
 
   .print-company-name {
-    font-size: 18pt;
+    font-size: 16pt !important;
     font-weight: 800;
     color: #0f172a;
     line-height: 1.1;
   }
 
-  .print-company-tagline {
-    font-size: 9pt;
-    font-weight: 600;
-    color: #475569;
-    margin-top: 2px;
-  }
-
+  /* Remove tagline, address & GSTIN from print option */
+  .print-company-tagline,
   .print-company-meta {
-    font-size: 8.5pt;
-    color: #64748b;
-    margin-top: 2px;
+    display: none !important;
   }
 
   .print-badge-box {
@@ -5705,20 +5714,20 @@ body.lh-erp-body {
 
   .print-barcode {
     font-family: monospace;
-    font-size: 14pt;
+    font-size: 13pt !important;
     letter-spacing: 2px;
     font-weight: bold;
   }
 
   .print-ticket-id {
     font-family: monospace;
-    font-size: 13pt;
+    font-size: 12pt !important;
     font-weight: 800;
     margin-top: 2px;
   }
 
   .print-status-tag {
-    font-size: 8.5pt;
+    font-size: 8pt !important;
     font-weight: 800;
     display: inline-block;
     padding: 2px 6px;
@@ -5727,41 +5736,42 @@ body.lh-erp-body {
   }
 
   .print-query-title {
-    font-size: 14pt;
+    font-size: 12pt !important;
     font-weight: 800;
-    margin: 14px 0 8px 0;
+    margin: 10px 0 6px 0 !important;
   }
 
   .print-meta-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-    font-size: 9pt;
+    gap: 4px !important;
+    font-size: 8.5pt !important;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
-    padding: 10px;
-    margin-bottom: 14px;
+    padding: 8px 10px !important;
+    margin-bottom: 10px !important;
   }
 
   .print-section-box {
     border: 1px solid #e2e8f0;
-    padding: 12px;
-    margin-bottom: 14px;
+    padding: 8px 10px !important;
+    margin-bottom: 10px !important;
     page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   .print-section-heading {
-    font-size: 10pt;
+    font-size: 9pt !important;
     font-weight: 700;
     text-transform: uppercase;
     border-bottom: 1px solid #e2e8f0;
-    padding-bottom: 4px;
-    margin-bottom: 8px;
+    padding-bottom: 3px !important;
+    margin-bottom: 6px !important;
   }
 
   .print-text-body {
-    font-size: 9.5pt;
-    line-height: 1.5;
+    font-size: 9pt !important;
+    line-height: 1.4 !important;
   }
 
   .print-solution-box {
@@ -5771,9 +5781,10 @@ body.lh-erp-body {
   .print-signatures-row {
     display: flex;
     justify-content: space-between;
-    margin-top: 40px;
-    padding-top: 20px;
+    margin-top: 25px !important;
+    padding-top: 15px !important;
     page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   .sig-col {
@@ -5783,27 +5794,91 @@ body.lh-erp-body {
 
   .sig-line {
     border-top: 1px solid #000000;
-    margin-bottom: 6px;
+    margin-bottom: 4px !important;
   }
 
   .sig-label {
-    font-size: 8pt;
+    font-size: 7.5pt !important;
     text-transform: uppercase;
     font-weight: 700;
   }
 
   .sig-name {
-    font-size: 8.5pt;
+    font-size: 8pt !important;
     color: #475569;
   }
 
   .print-footer-legal {
-    margin-top: 30px;
+    margin-top: 15px !important;
     border-top: 1px dashed #cbd5e1;
-    padding-top: 8px;
-    font-size: 7.5pt;
+    padding-top: 6px !important;
+    font-size: 7pt !important;
     color: #94a3b8;
     text-align: center;
+  }
+
+  /* Compact 4-Page Fit Optimization for Reports & Data Tables (adjusts 5-page spill to 4 pages) */
+  .printable-report-wrapper {
+    padding: 8px 12px !important;
+    margin: 0 !important;
+  }
+
+  .report-header-banner {
+    padding: 8px 10px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .report-header-banner h2 {
+    font-size: 13pt !important;
+    margin: 2px 0 !important;
+  }
+
+  .report-summary-kpi-row {
+    display: grid !important;
+    grid-template-columns: repeat(6, 1fr) !important;
+    gap: 6px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .rep-kpi {
+    padding: 4px 6px !important;
+  }
+
+  .rep-label {
+    font-size: 7pt !important;
+  }
+
+  .rep-num {
+    font-size: 11pt !important;
+  }
+
+  .table-responsive {
+    overflow: visible !important;
+  }
+
+  .data-table {
+    width: 100% !important;
+    font-size: 8pt !important;
+    border-collapse: collapse !important;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 4px 6px !important;
+    font-size: 8pt !important;
+    line-height: 1.25 !important;
+  }
+
+  .data-table tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .card-styled {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-bottom: 8px !important;
+    padding: 8px 10px !important;
   }
 }
 
@@ -14401,8 +14476,6 @@ This will remove their system access immediately.`);
         <div class="print-doc-header">
           <div class="company-brand-print">
             <h1 class="print-company-name">${company ? company.name : query.companyName}</h1>
-            <p class="print-company-tagline">${company ? company.tagline : "Steel Manufacturing & Power Plant"}</p>
-            <p class="print-company-meta">${company ? company.address : ""} | GSTIN: ${company ? company.gstin : ""}</p>
           </div>
           <div class="print-badge-box">
             <div class="print-barcode">||| | |||| || ||||| |||| | ||</div>
@@ -14490,6 +14563,7 @@ This will remove their system access immediately.`);
       </div>
     `;
       modal.classList.remove("hidden");
+      document.body.classList.add("printing-ticket");
       const btnPrintNow = modal.querySelector("#btn-do-print");
       btnPrintNow.onclick = () => {
         window.print();
@@ -14497,7 +14571,11 @@ This will remove their system access immediately.`);
       const btnClosePrint = modal.querySelector("#btn-close-print-modal");
       btnClosePrint.onclick = () => {
         modal.classList.add("hidden");
+        document.body.classList.remove("printing-ticket");
       };
+      window.addEventListener("afterprint", () => {
+        document.body.classList.remove("printing-ticket");
+      }, { once: true });
     }
   };
 
