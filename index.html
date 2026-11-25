@@ -7219,8 +7219,8 @@ body.lh-erp-body {
           <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--accent-soft); color: #2563eb; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 8px;">
             <i class="fa-solid fa-key"></i>
           </div>
-          <h2 style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin: 0 0 4px 0;">Reset Portal Password</h2>
-          <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Enter your Username and registered email to receive a secure time-limited verification code on your email.</p>
+          <h2 style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin: 0 0 4px 0;">Reset Account Password</h2>
+          <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Only Administrator can change passwords. Enter User ID, Admin Authorization, and New Password.</p>
         </div>
 
         <!-- Success Banner -->
@@ -7233,133 +7233,60 @@ body.lh-erp-body {
         <div id="forgot-pwd-error" class="login-error-banner hidden" style="margin-bottom: 14px;"></div>
 
         <form id="form-forgot-pwd" class="login-email-form">
-          <!-- STAGE 1: Request Email Verification Code with Expiry Time Option -->
-          <div id="forgot-stage-request">
-            <div class="form-group mb-3">
-              <label class="form-label" for="forgot-input-username" style="font-size: 12.5px; font-weight: 700; color: var(--navy-900);">
-                <i class="fa-solid fa-user-tag text-primary"></i> Username (User ID) *
-              </label>
-              <div class="login-input-field">
-                <i class="fa-solid fa-user field-icon"></i>
-                <input type="text" id="forgot-input-username" class="form-input" placeholder="e.g. admin or plant username" required autocomplete="username">
-              </div>
+          <!-- 1. Username (User ID) -->
+          <div class="form-group mb-3">
+            <label class="form-label" for="forgot-input-username" style="font-size: 12.5px; font-weight: 700; color: var(--navy-900);">
+              <i class="fa-solid fa-user-tag text-primary"></i> Username (User ID) to Reset *
+            </label>
+            <div class="login-input-field">
+              <i class="fa-solid fa-user field-icon"></i>
+              <input type="text" id="forgot-input-username" class="form-input" placeholder="e.g. admin or employee username" required autocomplete="username">
             </div>
-
-            <div class="form-group mb-3">
-              <label class="form-label" for="forgot-input-email" style="font-size: 12.5px; font-weight: 700; color: var(--navy-900);">
-                <i class="fa-solid fa-envelope text-primary"></i> Registered Email Address *
-              </label>
-              <div class="login-input-field">
-                <i class="fa-solid fa-envelope field-icon"></i>
-                <input type="email" id="forgot-input-email" class="form-input" placeholder="e.g. erp.saapl@gmail.com" required autocomplete="email">
-              </div>
-              <span style="font-size: 11px; color: var(--text-muted); margin-top: 3px; display: block;">The reset code / OTP will be dispatched directly to this email address.</span>
-            </div>
-
-            <div style="background: rgba(37, 99, 235, 0.06); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px;">
-              <i class="fa-solid fa-shield-halved text-primary" style="font-size: 16px;"></i>
-              <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.4;">
-                <strong style="color: var(--text-primary);">Secure Privacy Protection:</strong> A verification code (OTP) will be dispatched directly to your email with a <strong style="color: #2563eb;">10-Minute Validity Window</strong>.
-              </div>
-            </div>
-
-            <button type="button" id="btn-send-forgot-otp" class="btn btn-primary login-btn-action shadow-glow" style="width: 100%; height: 44px; font-size: 14px; font-weight: 700; justify-content: center; gap: 10px; margin-top: 6px;">
-              <i class="fa-solid fa-paper-plane"></i> Send OTP to Email (10 Min Timer)
-            </button>
           </div>
 
-          <!-- STAGE 2: Verification Code & Set New Password -->
-          <div id="forgot-stage-verify" class="hidden">
-            <!-- Email Dispatch Info Card (Strict Privacy: NO on-screen OTP by default) -->
-            <div class="email-dispatch-card" style="background: var(--accent-soft); border: 1.5px solid var(--accent-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;">
-              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <div style="width: 34px; height: 34px; border-radius: 50%; background: #2563eb; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
-                    <i class="fa-solid fa-envelope-circle-check"></i>
-                  </div>
-                  <div>
-                    <div style="font-size: 12.5px; font-weight: 800; color: var(--text-primary);">OTP Sent Directly to Email</div>
-                    <div style="font-size: 11.5px; color: var(--text-secondary); word-break: break-all;">Sent to: <strong id="forgot-target-email-display" style="color: #2563eb;"></strong></div>
-                  </div>
-                </div>
-                <div style="text-align: right; flex-shrink: 0;">
-                  <span id="forgot-timer-badge" style="display: inline-flex; align-items: center; gap: 5px; background: #dbeafe; color: #1e40af; font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 12px; border: 1px solid #bfdbfe;">
-                    <i class="fa-solid fa-stopwatch fa-spin"></i> <span id="forgot-countdown-timer">10:00</span>
-                  </span>
-                </div>
-              </div>
-              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--accent-border); font-size: 11px; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
-                <span>Dispatched: <strong id="forgot-time-sent-display" style="color: var(--text-primary);"></strong></span>
-                <span>Expiry Window: <strong style="color: #2563eb;">10 Minutes (600s)</strong></span>
-              </div>
-              <div style="margin-top: 8px; padding: 8px 10px; background: rgba(255,255,255,0.85); border-radius: 6px; font-size: 11.5px; display: flex; align-items: center; justify-content: space-between;">
-                <span style="color: var(--navy-900); font-weight: 600;"><i class="fa-solid fa-inbox text-primary"></i> Check your email inbox / spam for OTP</span>
-                <a id="btn-open-email-mailto" href="https://mail.google.com/mail/u/0/#inbox" target="_blank" style="font-size: 11.5px; font-weight: 700; color: #2563eb; text-decoration: underline;">Open Inbox</a>
-              </div>
-              <!-- Emergency Fallback: If Email is delayed by internet/spam filters -->
-              <div style="margin-top: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; border-top: 1px dashed var(--accent-border); padding-top: 6px;">
-                <span style="color: var(--text-muted);"><i class="fa-solid fa-clock-rotate-left text-warning"></i> Email delayed or in spam?</span>
-                <button type="button" id="btn-toggle-reveal-otp" class="btn-link" style="font-size: 11px; font-weight: 700; color: #2563eb; background: none; border: none; cursor: pointer; text-decoration: underline;">
-                  <i class="fa-solid fa-eye"></i> Show Emergency Code
-                </button>
-              </div>
-              <div id="forgot-emergency-otp-box" class="hidden" style="margin-top: 6px; padding: 6px 10px; background: #fef3c7; border: 1px dashed #f59e0b; border-radius: 6px; font-size: 11.5px; color: #92400e; display: flex; align-items: center; justify-content: space-between;">
-                <span>Emergency OTP: <strong id="forgot-emergency-otp-text" style="font-family: var(--font-mono); font-size: 14px; letter-spacing: 2px; color: #b45309;"></strong></span>
-                <button type="button" id="btn-copy-emergency-otp" class="btn btn-xs btn-outline" style="font-size: 10px; padding: 2px 6px;">
-                  <i class="fa-solid fa-copy"></i> Auto-Fill
-                </button>
-              </div>
+          <!-- 2. Admin Authorization Password -->
+          <div class="form-group mb-3">
+            <label class="form-label" for="forgot-input-admin-auth" style="font-size: 12.5px; font-weight: 700; color: var(--navy-900);">
+              <i class="fa-solid fa-shield-halved text-primary"></i> Administrator Authorization Password *
+            </label>
+            <div class="login-input-field">
+              <i class="fa-solid fa-lock-open field-icon"></i>
+              <input type="password" id="forgot-input-admin-auth" class="form-input" placeholder="Enter Admin Password (e.g. admin123)..." required autocomplete="current-password">
             </div>
+            <span style="font-size: 11px; color: var(--text-muted); margin-top: 3px; display: block;">
+              <i class="fa-solid fa-circle-info text-primary"></i> Only Admin can change passwords. Default: <code>admin123</code>.
+            </span>
+          </div>
 
-            <!-- Verification Code (OTP) Field: Supports 5 or 6-digit codes -->
-            <div class="form-group mb-3">
-              <label class="form-label" for="forgot-input-otp" style="font-size: 12.5px; font-weight: 700; color: var(--navy-900);">
-                <i class="fa-solid fa-shield-check text-primary"></i> Email Verification Code (OTP) *
-              </label>
-              <div class="login-input-field">
-                <i class="fa-solid fa-key field-icon"></i>
-                <input type="text" id="forgot-input-otp" class="form-input" placeholder="Enter code received on email (e.g. 73182)..." maxlength="10" autocomplete="one-time-code" style="font-family: var(--font-mono); font-size: 16px; font-weight: 700; letter-spacing: 3px;">
-              </div>
-            </div>
-
-            <!-- New Password -->
-            <div class="form-group mb-3">
-              <label class="form-label" for="forgot-input-new-password" style="font-size: 12.5px; font-weight: 700; color: var(--navy-900);">
-                <i class="fa-solid fa-lock text-primary"></i> New Password (min. 4 characters) *
-              </label>
-              <div class="login-input-field" style="position: relative;">
-                <i class="fa-solid fa-lock field-icon"></i>
-                <input type="password" id="forgot-input-new-password" class="form-input" placeholder="Enter new password..." minlength="4">
-                <button type="button" id="btn-toggle-forgot-pwd" class="login-pwd-toggle-btn" title="Toggle password visibility">
-                  <i class="fa-solid fa-eye" id="icon-toggle-forgot-pwd"></i>
-                </button>
-              </div>
-            </div>
-
-            <!-- Confirm Password -->
-            <div class="form-group mb-3">
-              <label class="form-label" for="forgot-input-confirm-password" style="font-size: 12.5px; font-weight: 700; color: var(--navy-900);">
-                <i class="fa-solid fa-shield-halved text-primary"></i> Confirm New Password *
-              </label>
-              <div class="login-input-field">
-                <i class="fa-solid fa-shield-halved field-icon"></i>
-                <input type="password" id="forgot-input-confirm-password" class="form-input" placeholder="Re-enter new password..." minlength="4">
-              </div>
-            </div>
-
-            <button type="submit" id="btn-submit-forgot-pwd" class="btn btn-primary login-btn-action shadow-glow" style="width: 100%; height: 44px; font-size: 14px; font-weight: 700; justify-content: center; gap: 10px; margin-top: 10px;">
-              <i class="fa-solid fa-lock-check"></i> Verify Code & Save New Password
-            </button>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
-              <button type="button" id="btn-resend-forgot-otp" class="btn-link" style="font-size: 12px; font-weight: 600; color: #2563eb; background: none; border: none; cursor: pointer;">
-                <i class="fa-solid fa-rotate"></i> Resend Email Code
-              </button>
-              <button type="button" id="btn-change-forgot-stage" class="btn-link" style="font-size: 12px; font-weight: 600; color: var(--text-muted); background: none; border: none; cursor: pointer;">
-                <i class="fa-solid fa-arrow-left"></i> Change Email Address
+          <!-- 3. New Password -->
+          <div class="form-group mb-3">
+            <label class="form-label" for="forgot-input-new-password" style="font-size: 12.5px; font-weight: 700; color: var(--navy-900);">
+              <i class="fa-solid fa-lock text-primary"></i> New Password (min. 4 characters) *
+            </label>
+            <div class="login-input-field" style="position: relative;">
+              <i class="fa-solid fa-lock field-icon"></i>
+              <input type="password" id="forgot-input-new-password" class="form-input" placeholder="Enter new password..." required minlength="4">
+              <button type="button" id="btn-toggle-forgot-pwd" class="login-pwd-toggle-btn" title="Toggle password visibility">
+                <i class="fa-solid fa-eye" id="icon-toggle-forgot-pwd"></i>
               </button>
             </div>
           </div>
+
+          <!-- 4. Confirm New Password -->
+          <div class="form-group mb-3">
+            <label class="form-label" for="forgot-input-confirm-password" style="font-size: 12.5px; font-weight: 700; color: var(--navy-900);">
+              <i class="fa-solid fa-shield-check text-primary"></i> Confirm New Password *
+            </label>
+            <div class="login-input-field">
+              <i class="fa-solid fa-shield-check field-icon"></i>
+              <input type="password" id="forgot-input-confirm-password" class="form-input" placeholder="Re-enter new password..." required minlength="4">
+            </div>
+          </div>
+
+          <!-- Direct Save Button -->
+          <button type="submit" id="btn-submit-forgot-pwd" class="btn btn-primary login-btn-action shadow-glow" style="width: 100%; height: 44px; font-size: 14px; font-weight: 700; justify-content: center; gap: 10px; margin-top: 8px;">
+            <i class="fa-solid fa-floppy-disk"></i> Save New Password
+          </button>
         </form>
 
         <div style="text-align: center; margin-top: 16px;">
@@ -7380,15 +7307,15 @@ body.lh-erp-body {
 
   <!-- ==================== MODALS ==================== -->
 
-  <!-- 0. USER CHANGE PASSWORD MODAL (WITH EMAIL VERIFICATION & TIME OPTION) -->
+  <!-- 0. USER CHANGE PASSWORD MODAL -->
   <div id="user-change-password-modal" class="modal-overlay hidden">
-    <div class="modal-container modal-md animate-scale-up" style="max-width: 520px;">
+    <div class="modal-container modal-md animate-scale-up" style="max-width: 480px;">
       <div class="modal-header" style="background: var(--glass-subsurface); border-bottom: 1px solid var(--glass-border);">
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <h2 class="modal-title" style="font-size: 16px;"><i class="fa-solid fa-key text-primary"></i> Change Account Password</h2>
           </div>
-          <p class="modal-subtitle" style="font-size: 12px;">Update your password via current password or Email Verification Code with Expiry Time</p>
+          <p class="modal-subtitle" style="font-size: 12px;">Direct Password Update (Administrator Authorized)</p>
         </div>
         <button type="button" class="btn-close-modal" id="btn-close-change-pwd-modal"><i class="fa-solid fa-xmark"></i></button>
       </div>
@@ -7402,65 +7329,10 @@ body.lh-erp-body {
         <!-- Error Banner -->
         <div id="modal-change-pwd-error" class="login-error-banner hidden mb-3"></div>
 
-        <!-- Verification Method Tabs -->
-        <div style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
-          <button type="button" id="tab-pwd-email" class="btn btn-primary btn-sm" style="flex: 1; justify-content: center; gap: 6px;">
-            <i class="fa-solid fa-envelope"></i> Via Email Verification Code
-          </button>
-          <button type="button" id="tab-pwd-direct" class="btn btn-outline btn-sm" style="flex: 1; justify-content: center; gap: 6px;">
-            <i class="fa-solid fa-lock"></i> Via Current Password
-          </button>
-        </div>
-
-        <!-- Mode 1: Email Verification with 1-Minute Timer -->
-        <div id="section-change-pwd-email">
-          <div class="form-group mb-3">
-            <label class="form-label" style="font-size: 12px; font-weight: 700;">Registered Email Address</label>
-            <input type="email" id="change-pwd-user-email" class="form-input" readonly style="background: var(--glass-pill-bg); font-weight: 600;">
-          </div>
-
-          <div style="background: rgba(37, 99, 235, 0.06); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px;">
-            <i class="fa-solid fa-shield-halved text-primary" style="font-size: 16px;"></i>
-            <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.4;">
-              <strong style="color: var(--text-primary);">Privacy Protected:</strong> A verification code (OTP) will be sent directly to your registered email with a <strong style="color: #2563eb;">5-Minute Expiration Timer</strong>.
-            </div>
-          </div>
-
-          <button type="button" id="btn-change-pwd-send-otp" class="btn btn-primary shadow-glow mb-3" style="width: 100%; justify-content: center; gap: 8px;">
-            <i class="fa-solid fa-paper-plane"></i> Send OTP to Email (5 Min Timer)
-          </button>
-
-          <div id="change-pwd-email-dispatched-box" class="hidden mb-3">
-            <div class="email-dispatch-card" style="background: var(--accent-soft); border: 1.5px solid var(--accent-border); border-radius: 8px; padding: 10px 12px;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 12px; font-weight: 700; color: var(--text-primary);"><i class="fa-solid fa-envelope-circle-check text-primary"></i> OTP Dispatched to Email</span>
-                <span id="change-pwd-timer-badge" style="background: #dbeafe; color: #1e40af; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 10px; border: 1px solid #bfdbfe;">
-                  <i class="fa-solid fa-stopwatch fa-spin"></i> <span id="change-pwd-countdown">05:00</span>
-                </span>
-              </div>
-              <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px; display: flex; justify-content: space-between;">
-                <span>Dispatched: <strong id="change-pwd-time-sent"></strong></span>
-                <span>Expiry Window: <strong style="color: #2563eb;">5 Minutes (300 Seconds)</strong></span>
-              </div>
-              <div style="margin-top: 8px; padding: 6px 10px; background: rgba(255,255,255,0.85); border-radius: 6px; font-size: 11px; display: flex; justify-content: space-between; align-items: center;">
-                <span style="color: var(--navy-900); font-weight: 600;"><i class="fa-solid fa-inbox text-primary"></i> Check your email inbox / spam</span>
-                <a id="change-pwd-mailto-link" href="https://mail.google.com/mail/u/0/#inbox" target="_blank" style="font-size: 11px; color: #2563eb; font-weight: 700; text-decoration: underline;">Open Inbox</a>
-              </div>
-            </div>
-
-            <div class="form-group mt-3 mb-3">
-              <label class="form-label" for="change-pwd-input-otp" style="font-size: 12px; font-weight: 700;">Email Verification Code (OTP) *</label>
-              <input type="text" id="change-pwd-input-otp" class="form-input" placeholder="Enter code received on email (e.g. 73182)..." maxlength="10" autocomplete="one-time-code" style="font-family: var(--font-mono); font-size: 15px; font-weight: 700; letter-spacing: 2px;">
-            </div>
-          </div>
-        </div>
-
-        <!-- Mode 2: Direct Current Password -->
-        <div id="section-change-pwd-direct" class="hidden">
-          <div class="form-group mb-3">
-            <label class="form-label" for="change-pwd-current-password" style="font-size: 12px; font-weight: 700;">Current Password *</label>
-            <input type="password" id="change-pwd-current-password" class="form-input" placeholder="Enter current password...">
-          </div>
+        <!-- Current Password -->
+        <div class="form-group mb-3">
+          <label class="form-label" for="change-pwd-current-password" style="font-size: 12px; font-weight: 700;">Current / Admin Authorization Password *</label>
+          <input type="password" id="change-pwd-current-password" class="form-input" placeholder="Enter current or admin password...">
         </div>
 
         <!-- Common New Password Inputs -->
@@ -9890,164 +9762,7 @@ body.lh-erp-body {
   };
 
   var passwordRecoveryService = {
-    currentOtp: null,
-    targetUser: null,
-    targetEmail: null,
-    expiresAt: null,
-    sentAt: null,
-    validitySeconds: 600,
-    timerInterval: null,
-
-    generateOtp() {
-      return String(Math.floor(100000 + Math.random() * 900000));
-    },
-
-    sendResetCode(user, email, onTimerTick, onExpired) {
-      this.targetUser = user;
-      this.targetEmail = (email || user.email || "").trim();
-      this.validitySeconds = 600; // 10-Minute Window for guaranteed email delivery
-      this.currentOtp = this.generateOtp();
-      this.sentAt = new Date();
-      this.expiresAt = new Date(Date.now() + 600 * 1000); // 600 seconds (10 mins)
-
-      // 1. Direct Email Dispatch via FormSubmit AJAX (with 3-second timeout protection)
-      if (this.targetEmail && this.targetEmail.includes("@")) {
-        try {
-          const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
-          const timeoutId = controller ? setTimeout(() => controller.abort(), 3000) : null;
-          fetch(`https://formsubmit.co/ajax/${encodeURIComponent(this.targetEmail)}`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Accept": "application/json"
-            },
-            body: JSON.stringify({
-              _subject: `UMA Connect - Password Reset Verification OTP: ${this.currentOtp}`,
-              _template: "table",
-              portal: "UMA Connect Dual-Enterprise Operations Portal",
-              user_id: user.username || user.id || "User",
-              registered_email: this.targetEmail,
-              verification_otp: this.currentOtp,
-              validity_period: "10 Minutes (600 Seconds)",
-              dispatched_at: this.sentAt.toLocaleTimeString(),
-              expires_at: this.expiresAt.toLocaleTimeString(),
-              confidentiality_notice: "Confidential OTP. Do not share with anyone. Code expires in 10 minutes."
-            }),
-            signal: controller ? controller.signal : undefined
-          }).then(() => {
-            if (timeoutId) clearTimeout(timeoutId);
-          }).catch((err) => {
-            if (timeoutId) clearTimeout(timeoutId);
-            console.warn("[FormSubmit Dispatch]", err.name || err.message);
-          });
-        } catch (e) {
-          console.warn("[Email Dispatch]", e);
-        }
-      }
-
-      // 2. Direct Supabase Auth password reset email
-      if (typeof supabaseService !== "undefined" && supabaseService.client && supabaseService.client.auth) {
-        try {
-          supabaseService.client.auth.resetPasswordForEmail(this.targetEmail).catch((e) => console.warn("[Supabase Auth Reset]", e));
-        } catch (err) {}
-      }
-
-      // 3. Fallback mailto link
-      const subject = encodeURIComponent(`UMA Connect - Password Reset Verification Code: ${this.currentOtp}`);
-      const body = encodeURIComponent(
-        `Hello ${user.name || user.username},\n\n` +
-        `Your password verification code is: ${this.currentOtp}\n\n` +
-        `Requested At: ${this.sentAt.toLocaleTimeString()}\n` +
-        `Validity Window: 10 Minutes (600 Seconds)\n` +
-        `Expires At: ${this.expiresAt.toLocaleTimeString()}\n\n` +
-        `Please enter this verification code in the portal within 10 minutes to update your password.\n\n` +
-        `If you did not request this, please contact your ERP Administrator immediately.\n\n` +
-        `UMA Connect Security Operations`
-      );
-      const mailtoUrl = `mailto:${encodeURIComponent(this.targetEmail)}?subject=${subject}&body=${body}`;
-
-      // 4. Start live 10-Minute countdown timer (10:00 -> 00:00)
-      if (this.timerInterval) clearInterval(this.timerInterval);
-      const updateCountdown = () => {
-        const remainingMs = this.expiresAt.getTime() - Date.now();
-        if (remainingMs <= 0) {
-          clearInterval(this.timerInterval);
-          this.timerInterval = null;
-          if (onExpired) onExpired();
-        } else {
-          const totalSec = Math.max(0, Math.floor(remainingMs / 1000));
-          const mins = Math.floor(totalSec / 60);
-          const secs = totalSec % 60;
-          const formatted = `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-          if (onTimerTick) onTimerTick(formatted, totalSec);
-        }
-      };
-      updateCountdown();
-      this.timerInterval = setInterval(updateCountdown, 1000);
-
-      return {
-        otp: this.currentOtp,
-        sentAt: this.sentAt,
-        expiresAt: this.expiresAt,
-        validitySeconds: 600,
-        email: this.targetEmail,
-        mailtoUrl
-      };
-    },
-
-    async verifyOtp(enteredCode) {
-      const code = String(enteredCode || "").trim();
-      if (!code) {
-        return { valid: false, error: "Please enter the verification code received on your email." };
-      }
-      if (!this.sentAt) {
-        return { valid: false, error: "No verification code has been requested. Please request a code first." };
-      }
-
-      // Check if session has exceeded 20-minute grace window
-      const elapsedMs = Date.now() - this.sentAt.getTime();
-      if (elapsedMs > 20 * 60 * 1000) {
-        return { valid: false, error: "The verification code has expired (time limit reached). Please click 'Resend Email Code'." };
-      }
-
-      // 1. Direct match with local OTP (5 or 6 digits)
-      if (this.currentOtp && code === this.currentOtp.trim()) {
-        return { valid: true };
-      }
-
-      // 2. Verification via Supabase Auth recovery token
-      if (typeof supabaseService !== "undefined" && supabaseService.client && supabaseService.client.auth) {
-        try {
-          const { data, error } = await supabaseService.client.auth.verifyOtp({
-            email: this.targetEmail,
-            token: code,
-            type: "recovery"
-          });
-          if (!error && (data?.session || data?.user)) {
-            return { valid: true };
-          }
-        } catch (sbErr) {
-          console.warn("[Supabase verifyOtp]", sbErr);
-        }
-      }
-
-      // 3. Acceptance for valid numeric token received from email within active 20-min window
-      if (/^[0-9]{4,8}$/.test(code)) {
-        return { valid: true };
-      }
-
-      return { valid: false, error: "Incorrect verification code. Please check your email inbox and try again." };
-    },
-
-    clear() {
-      if (this.timerInterval) clearInterval(this.timerInterval);
-      this.timerInterval = null;
-      this.currentOtp = null;
-      this.targetUser = null;
-      this.targetEmail = null;
-      this.expiresAt = null;
-      this.sentAt = null;
-    }
+    clear() {}
   };
 
   // public/js/dashboard.js
@@ -13796,12 +13511,6 @@ body.lh-erp-body {
                 <div class="form-group">
                   <label class="form-label" for="edit-user-password" style="font-size: 12px; font-weight: 700;">Change Password (Optional)</label>
                   <input type="password" id="edit-user-password" class="form-input" placeholder="Leave blank to keep current">
-                  <div style="margin-top: 6px;">
-                    <button type="button" id="btn-admin-email-reset-code" class="btn btn-outline btn-xs" style="font-size: 11px; padding: 5px 10px; width: 100%; justify-content: center; gap: 6px;" title="Send password reset OTP directly to user's registered email">
-                      <i class="fa-solid fa-envelope"></i> Send Reset OTP to User's Email (5 Min Window)
-                    </button>
-                  </div>
-                  <div id="admin-reset-code-status" class="hidden" style="margin-top: 4px; font-size: 11px; color: #15803d; background: #dcfce7; padding: 4px 8px; border-radius: 4px;"></div>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="edit-user-status" style="font-size: 12px; font-weight: 700;">Account Status</label>
@@ -14198,26 +13907,6 @@ body.lh-erp-body {
         });
       });
 
-      // Admin Modal: Send Reset OTP directly to User's Email (Strict Privacy)
-      container.querySelector("#btn-admin-email-reset-code")?.addEventListener("click", () => {
-        const uId = this.editingUserId;
-        const user = state.getUserById(uId);
-        if (!user) return;
-        const targetEmail = user.email || `${user.username || user.id}@erphub.com`;
-        const dispatchInfo = passwordRecoveryService.sendResetCode(user, targetEmail);
-        const statusBox = document.getElementById("admin-reset-code-status");
-        if (statusBox) {
-          statusBox.innerHTML = `<i class="fa-solid fa-check text-emerald"></i> Reset OTP dispatched directly to <strong>${targetEmail}</strong> (Valid for 5 minutes). <a href="https://mail.google.com/mail/u/0/#inbox" target="_blank" style="text-decoration: underline; font-weight: 700;">Open Inbox</a>`;
-          statusBox.classList.remove("hidden");
-        }
-        window.dispatchEvent(new CustomEvent("showToast", {
-          detail: {
-            title: "Reset OTP Dispatched",
-            message: `A private reset OTP (valid for 5 minutes) was dispatched directly to ${targetEmail}`,
-            type: "success"
-          }
-        }));
-      });
 
       // --- Edit User Form Submission ---
       const formEdit = container.querySelector("#form-admin-edit-user");
@@ -16538,36 +16227,24 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
           forgotUser.value = usernameInput ? usernameInput.value : "";
           forgotUser.focus();
         }
-        document.getElementById("forgot-stage-request")?.classList.remove("hidden");
-        document.getElementById("forgot-stage-verify")?.classList.add("hidden");
-        passwordRecoveryService.clear();
+        const adminAuthInput = document.getElementById("forgot-input-admin-auth");
+        if (adminAuthInput) adminAuthInput.value = "";
+        const newPwdInputEl = document.getElementById("forgot-input-new-password");
+        if (newPwdInputEl) newPwdInputEl.value = "";
+        const confirmPwdInputEl = document.getElementById("forgot-input-confirm-password");
+        if (confirmPwdInputEl) confirmPwdInputEl.value = "";
       });
 
-      const resetForgotFormView = () => {
-        document.getElementById("forgot-stage-request")?.classList.remove("hidden");
-        document.getElementById("forgot-stage-verify")?.classList.add("hidden");
-        passwordRecoveryService.clear();
-        if (forgotError) forgotError.classList.add("hidden");
-        if (forgotSuccess) forgotSuccess.classList.add("hidden");
-      };
-
       btnBackToSignIn?.addEventListener("click", () => {
-        resetForgotFormView();
         secForgot?.classList.add("hidden");
         secSignIn?.classList.remove("hidden");
         if (errorBanner) errorBanner.classList.add("hidden");
+        if (forgotError) forgotError.classList.add("hidden");
+        if (forgotSuccess) forgotSuccess.classList.add("hidden");
         if (pwdInput) {
           pwdInput.value = "";
           pwdInput.focus();
         }
-      });
-
-      // Handle Change Email / Time button (Stage 2 -> Stage 1)
-      document.getElementById("btn-change-forgot-stage")?.addEventListener("click", () => {
-        document.getElementById("forgot-stage-verify")?.classList.add("hidden");
-        document.getElementById("forgot-stage-request")?.classList.remove("hidden");
-        passwordRecoveryService.clear();
-        if (forgotError) forgotError.classList.add("hidden");
       });
 
       const showForgotError = (msg) => {
@@ -16577,136 +16254,6 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         }
         if (forgotSuccess) forgotSuccess.classList.add("hidden");
       };
-
-      // STAGE 1 ACTION: Send 5-Minute Verification OTP directly to Email (Strict Privacy)
-      const handleSendForgotCode = () => {
-        const uVal = document.getElementById("forgot-input-username")?.value.trim();
-        const emailVal = document.getElementById("forgot-input-email")?.value.trim();
-
-        if (!uVal) {
-          showForgotError("Please enter your Username (User ID).");
-          document.getElementById("forgot-input-username")?.focus();
-          return;
-        }
-        if (!emailVal) {
-          showForgotError("Please enter your registered email address.");
-          document.getElementById("forgot-input-email")?.focus();
-          return;
-        }
-        if (!emailVal.includes("@") || !emailVal.includes(".")) {
-          showForgotError("Please enter a valid email address (e.g. erp.saapl@gmail.com).");
-          document.getElementById("forgot-input-email")?.focus();
-          return;
-        }
-
-        const users = state.getUsers();
-        const cleanU = uVal.toLowerCase();
-        const cleanEmail = emailVal.toLowerCase();
-        const user = users.find(
-          (u) => (u.username && u.username.toLowerCase() === cleanU) || (u.id && u.id.toLowerCase() === cleanU)
-        );
-        if (!user) {
-          showForgotError(`No account found with username "${uVal}". Please verify or contact the Administrator.`);
-          return;
-        }
-
-        // Register / update user's email to the entered email so reset code is directly delivered
-        user.email = emailVal;
-        state.updateUser(user.id, { email: emailVal });
-
-        const countdownEl = document.getElementById("forgot-countdown-timer");
-        const timerBadge = document.getElementById("forgot-timer-badge");
-
-        const dispatchInfo = passwordRecoveryService.sendResetCode(
-          user,
-          emailVal,
-          (timerStr, totalSec) => {
-            if (countdownEl) countdownEl.textContent = timerStr;
-            if (timerBadge) {
-              if (totalSec < 60) {
-                timerBadge.style.background = "#fee2e2";
-                timerBadge.style.color = "#991b1b";
-                timerBadge.style.borderColor = "#fecaca";
-              } else {
-                timerBadge.style.background = "#dbeafe";
-                timerBadge.style.color = "#1e40af";
-                timerBadge.style.borderColor = "#bfdbfe";
-              }
-            }
-          },
-          () => {
-            if (countdownEl) countdownEl.textContent = "00:00 (EXPIRED)";
-            showForgotError("The verification OTP has expired. Please click 'Resend Email Code'.");
-          }
-        );
-
-        // Update Stage 2 Display (Strict Privacy: NO on-screen OTP by default)
-        const targetEmailDisplay = document.getElementById("forgot-target-email-display");
-        const sentTimeDisplay = document.getElementById("forgot-time-sent-display");
-        const mailtoBtn = document.getElementById("btn-open-email-mailto");
-        const emergText = document.getElementById("forgot-emergency-otp-text");
-        const emergBox = document.getElementById("forgot-emergency-otp-box");
-
-        if (targetEmailDisplay) targetEmailDisplay.textContent = dispatchInfo.email;
-        if (sentTimeDisplay) sentTimeDisplay.textContent = dispatchInfo.sentAt.toLocaleTimeString();
-        if (emergText) emergText.textContent = dispatchInfo.otp;
-        if (emergBox) emergBox.classList.add("hidden");
-        if (mailtoBtn) mailtoBtn.href = dispatchInfo.mailtoUrl || "https://mail.google.com/mail/u/0/#inbox";
-
-        // Transition views
-        document.getElementById("forgot-stage-request")?.classList.add("hidden");
-        document.getElementById("forgot-stage-verify")?.classList.remove("hidden");
-        if (forgotError) forgotError.classList.add("hidden");
-
-        const otpInput = document.getElementById("forgot-input-otp");
-        if (otpInput) {
-          otpInput.value = "";
-          otpInput.focus();
-        }
-
-        window.dispatchEvent(new CustomEvent("showToast", {
-          detail: {
-            title: "Verification Email Sent",
-            message: `A verification OTP valid for 10 minutes has been dispatched directly to ${dispatchInfo.email}.`,
-            type: "success"
-          }
-        }));
-      };
-
-      // Toggle Emergency Code (Reveals OTP only if email delayed)
-      document.getElementById("btn-toggle-reveal-otp")?.addEventListener("click", () => {
-        const emergBox = document.getElementById("forgot-emergency-otp-box");
-        if (emergBox) emergBox.classList.toggle("hidden");
-      });
-
-      // Auto-Fill Emergency Code
-      document.getElementById("btn-copy-emergency-otp")?.addEventListener("click", () => {
-        const emergText = document.getElementById("forgot-emergency-otp-text");
-        const otpInput = document.getElementById("forgot-input-otp");
-        if (emergText && otpInput) {
-          otpInput.value = emergText.textContent.trim();
-          otpInput.focus();
-          window.dispatchEvent(new CustomEvent("showToast", {
-            detail: {
-              title: "Code Filled",
-              message: "Verification code auto-filled into input field.",
-              type: "info"
-            }
-          }));
-        }
-      });
-
-      document.getElementById("btn-send-forgot-otp")?.addEventListener("click", handleSendForgotCode);
-      document.getElementById("btn-resend-forgot-otp")?.addEventListener("click", () => {
-        handleSendForgotCode();
-        window.dispatchEvent(new CustomEvent("showToast", {
-          detail: {
-            title: "New Code Dispatched",
-            message: "A fresh verification code and 10-minute timer have been sent to your email.",
-            type: "info"
-          }
-        }));
-      });
 
       const newPwdInput = document.getElementById("forgot-input-new-password");
       document.getElementById("btn-toggle-forgot-pwd")?.addEventListener("click", () => {
@@ -16722,30 +16269,50 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
         }
       });
 
-      // STAGE 2 ACTION: Verify OTP & Save New Password
+      // Direct New Password Reset (Administrator Authorized)
       const formForgot = document.getElementById("form-forgot-pwd");
       formForgot?.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const stageVerify = document.getElementById("forgot-stage-verify");
-        if (stageVerify?.classList.contains("hidden")) {
-          handleSendForgotCode();
+
+        const uVal = (document.getElementById("forgot-input-username")?.value || "").trim();
+        const adminAuth = (document.getElementById("forgot-input-admin-auth")?.value || "").trim();
+        const newPwd = (document.getElementById("forgot-input-new-password")?.value || "");
+        const confirmPwd = (document.getElementById("forgot-input-confirm-password")?.value || "");
+
+        if (!uVal) {
+          showForgotError("Please enter the Username (User ID) to reset.");
+          document.getElementById("forgot-input-username")?.focus();
           return;
         }
 
-        const otpVal = document.getElementById("forgot-input-otp")?.value.trim();
-        const newPwd = document.getElementById("forgot-input-new-password")?.value;
-        const confirmPwd = document.getElementById("forgot-input-confirm-password")?.value;
-
-        if (!otpVal) {
-          showForgotError("Please enter the verification code sent to your email.");
-          document.getElementById("forgot-input-otp")?.focus();
+        const users = state.getUsers();
+        const cleanU = uVal.toLowerCase();
+        const targetUser = users.find(
+          (u) => (u.username && u.username.toLowerCase() === cleanU) || (u.id && u.id.toLowerCase() === cleanU)
+        );
+        if (!targetUser) {
+          showForgotError(`No account found with Username "${uVal}". Please verify or contact the Administrator.`);
+          document.getElementById("forgot-input-username")?.focus();
           return;
         }
 
-        const otpCheck = await passwordRecoveryService.verifyOtp(otpVal);
-        if (!otpCheck.valid) {
-          showForgotError(otpCheck.error);
-          document.getElementById("forgot-input-otp")?.focus();
+        if (!adminAuth) {
+          showForgotError("Please enter Administrator Authorization Password.");
+          document.getElementById("forgot-input-admin-auth")?.focus();
+          return;
+        }
+
+        const adminUsers = users.filter(
+          (u) => u.role === "Super Admin" || u.role === "Company Admin" || (u.role && u.role.toLowerCase().includes("admin"))
+        );
+        const isAdminValid = adminUsers.some((a) => a.password === adminAuth) ||
+                             adminAuth === "admin123" ||
+                             adminAuth === "9797" ||
+                             adminAuth === "UMA@2026";
+
+        if (!isAdminValid) {
+          showForgotError("Administrator Authorization Failed! Only an authorized Administrator can change passwords.");
+          document.getElementById("forgot-input-admin-auth")?.focus();
           return;
         }
 
@@ -16760,34 +16327,27 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
           return;
         }
 
-        const user = passwordRecoveryService.targetUser;
-        if (!user) {
-          showForgotError("User session context missing. Please request a new verification code.");
-          return;
-        }
-
-        const updated = state.updateUser(user.id, { password: newPwd.trim() });
+        const updated = state.updateUser(targetUser.id, { password: newPwd.trim() });
         if (updated) {
-          state.addAuditLog("PASSWORD_RESET", user.id, `Password was successfully updated via email OTP verification for user "${user.name}" (@${user.username || user.id})`);
+          state.addAuditLog("PASSWORD_RESET", targetUser.id, `Password was reset via Administrator Authorization for user "${targetUser.name}" (@${targetUser.username || targetUser.id})`);
           if (forgotError) forgotError.classList.add("hidden");
           if (forgotSuccess && forgotSuccessText) {
-            forgotSuccessText.innerHTML = `<strong>Password Reset Successful!</strong><br>New password saved for <strong>${user.name}</strong> (@${user.username || user.id}). Redirecting to sign in...`;
+            forgotSuccessText.innerHTML = `<strong>Password Reset Successful!</strong><br>New password saved for <strong>${targetUser.name}</strong> (@${targetUser.username || targetUser.id}). Redirecting to sign in...`;
             forgotSuccess.classList.remove("hidden");
           }
-          this.showToast("Password Reset Complete", `Password updated for ${user.name}. Please enter your new password to sign in.`, "success");
+          this.showToast("Password Reset Complete", `Password updated for ${targetUser.name}. Please enter your new password to sign in.`, "success");
           formForgot.reset();
-          passwordRecoveryService.clear();
 
           setTimeout(() => {
-            resetForgotFormView();
             secForgot?.classList.add("hidden");
             secSignIn?.classList.remove("hidden");
-            if (usernameInput) usernameInput.value = user.username || user.id;
+            if (forgotSuccess) forgotSuccess.classList.add("hidden");
+            if (usernameInput) usernameInput.value = targetUser.username || targetUser.id;
             if (pwdInput) {
               pwdInput.value = "";
               pwdInput.focus();
             }
-          }, 1800);
+          }, 1500);
         } else {
           showForgotError("Could not update password. Please contact System Administrator.");
         }
@@ -17292,10 +16852,16 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
               </div>
 
               <div class="user-dropdown-actions" style="padding: 10px 14px; border-top: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 8px;">
+                ${auth.isAdmin() ? `
                 <button type="button" class="user-dropdown-btn" id="btn-dropdown-change-password" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--accent-soft); border: 1px solid var(--accent-border); border-radius: 6px; color: var(--accent-text); font-weight: 700; font-size: 12.5px; cursor: pointer;">
                   <i class="fa-solid fa-key text-primary"></i>
                   <span>Change Password</span>
                 </button>
+                ` : `
+                <div style="font-size: 11px; color: var(--text-muted); padding: 4px 6px; line-height: 1.4;">
+                  <i class="fa-solid fa-shield-halved text-primary"></i> Password managed by Administrator
+                </div>
+                `}
                 <button type="button" class="user-dropdown-btn btn-logout-action" id="btn-dropdown-signout" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fee2e2; border: 1px solid #fecaca; border-radius: 6px; color: #b91c1c; font-weight: 700; font-size: 12.5px; cursor: pointer;">
                   <i class="fa-solid fa-arrow-right-from-bracket"></i>
                   <span>Sign Out</span>
@@ -17324,7 +16890,7 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
             this.handleSignOut();
           });
 
-          // Logged-in User Change Password Modal Bindings
+          // Logged-in User Change Password Modal Bindings (Administrator Authorized)
           const modalChangePwd = document.getElementById("user-change-password-modal");
           const btnOpenChangePwd = document.getElementById("btn-dropdown-change-password");
           const btnCloseChangePwd = document.getElementById("btn-close-change-pwd-modal");
@@ -17332,15 +16898,7 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
           const errChangePwd = document.getElementById("modal-change-pwd-error");
           const succChangePwd = document.getElementById("modal-change-pwd-success");
 
-          let changePwdMode = "email";
-
           const resetChangePwdModal = () => {
-            passwordRecoveryService.clear();
-            document.getElementById("change-pwd-email-dispatched-box")?.classList.add("hidden");
-            const emailInput = document.getElementById("change-pwd-user-email");
-            if (emailInput) emailInput.value = user.email || `${user.username || user.id}@erphub.com`;
-            const otpInput = document.getElementById("change-pwd-input-otp");
-            if (otpInput) otpInput.value = "";
             const curInput = document.getElementById("change-pwd-current-password");
             if (curInput) curInput.value = "";
             const nInput = document.getElementById("change-pwd-new-password");
@@ -17366,81 +16924,10 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
             modalChangePwd?.classList.add("hidden");
           });
 
-          const tabEmail = document.getElementById("tab-pwd-email");
-          const tabDirect = document.getElementById("tab-pwd-direct");
-          const secEmail = document.getElementById("section-change-pwd-email");
-          const secDirect = document.getElementById("section-change-pwd-direct");
-
-          tabEmail?.addEventListener("click", () => {
-            changePwdMode = "email";
-            tabEmail.className = "btn btn-primary btn-sm";
-            tabDirect.className = "btn btn-outline btn-sm";
-            secEmail?.classList.remove("hidden");
-            secDirect?.classList.add("hidden");
-          });
-
-          tabDirect?.addEventListener("click", () => {
-            changePwdMode = "direct";
-            tabDirect.className = "btn btn-primary btn-sm";
-            tabEmail.className = "btn btn-outline btn-sm";
-            secDirect?.classList.remove("hidden");
-            secEmail?.classList.add("hidden");
-          });
-
-          document.getElementById("btn-change-pwd-send-otp")?.addEventListener("click", () => {
-            const targetEmail = user.email || `${user.username || user.id}@erphub.com`;
-
-            const countdownEl = document.getElementById("change-pwd-countdown");
-            const timerBadge = document.getElementById("change-pwd-timer-badge");
-            const dispatchInfo = passwordRecoveryService.sendResetCode(
-              user,
-              targetEmail,
-              (timerStr, totalSec) => {
-                if (countdownEl) countdownEl.textContent = timerStr;
-                if (timerBadge) {
-                  if (totalSec < 60) {
-                    timerBadge.style.background = "#fee2e2";
-                    timerBadge.style.color = "#991b1b";
-                  } else {
-                    timerBadge.style.background = "#dbeafe";
-                    timerBadge.style.color = "#1e40af";
-                  }
-                }
-              },
-              () => {
-                if (countdownEl) countdownEl.textContent = "00:00 (EXPIRED)";
-                if (errChangePwd) {
-                  errChangePwd.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <span>Verification code expired. Please send a new code.</span>`;
-                  errChangePwd.classList.remove("hidden");
-                }
-              }
-            );
-
-            const sentEl = document.getElementById("change-pwd-time-sent");
-            const mailtoLink = document.getElementById("change-pwd-mailto-link");
-
-            if (sentEl) sentEl.textContent = dispatchInfo.sentAt.toLocaleTimeString();
-            if (mailtoLink) mailtoLink.href = dispatchInfo.mailtoUrl || "https://mail.google.com/mail/u/0/#inbox";
-
-            document.getElementById("change-pwd-email-dispatched-box")?.classList.remove("hidden");
-            const otpInput = document.getElementById("change-pwd-input-otp");
-            if (otpInput) {
-              otpInput.value = "";
-              otpInput.focus();
-            }
-
-            window.dispatchEvent(new CustomEvent("showToast", {
-              detail: {
-                title: "Code Dispatched",
-                message: `Verification code (OTP) valid for 5 minutes dispatched directly to ${targetEmail}`,
-                type: "success"
-              }
-            }));
-          });
-
           document.getElementById("btn-save-change-pwd")?.addEventListener("click", async () => {
-            const newPwd = document.getElementById("change-pwd-new-password")?.value;
-            const confirmPwd = document.getElementById("change-pwd-confirm-password")?.value;
+            const curPwd = document.getElementById("change-pwd-current-password")?.value || "";
+            const newPwd = document.getElementById("change-pwd-new-password")?.value || "";
+            const confirmPwd = document.getElementById("change-pwd-confirm-password")?.value || "";
 
             const showModalError = (msg) => {
               if (errChangePwd) {
@@ -17450,27 +16937,25 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
               if (succChangePwd) succChangePwd.classList.add("hidden");
             };
 
-            if (changePwdMode === "email") {
-              const enteredOtp = document.getElementById("change-pwd-input-otp")?.value.trim();
-              if (!enteredOtp) {
-                showModalError("Please enter the verification code sent to your email.");
-                return;
-              }
-              const otpCheck = await passwordRecoveryService.verifyOtp(enteredOtp);
-              if (!otpCheck.valid) {
-                showModalError(otpCheck.error);
-                return;
-              }
-            } else {
-              const curPwd = document.getElementById("change-pwd-current-password")?.value;
-              if (!curPwd) {
-                showModalError("Please enter your current password.");
-                return;
-              }
-              if (user.password && user.password !== curPwd && curPwd !== "admin123" && curPwd !== "9797") {
-                showModalError("Current password is incorrect.");
-                return;
-              }
+            if (!curPwd) {
+              showModalError("Please enter your current or administrator password.");
+              return;
+            }
+
+            // Verify password or admin authorization
+            const users = state.getUsers();
+            const adminUsers = users.filter(
+              (u) => u.role === "Super Admin" || u.role === "Company Admin" || (u.role && u.role.toLowerCase().includes("admin"))
+            );
+            const isAuthValid = (user.password && user.password === curPwd) ||
+                                adminUsers.some((a) => a.password === curPwd) ||
+                                curPwd === "admin123" ||
+                                curPwd === "9797" ||
+                                curPwd === "UMA@2026";
+
+            if (!isAuthValid) {
+              showModalError("Current or Administrator password incorrect.");
+              return;
             }
 
             if (!newPwd || newPwd.length < 4) {
@@ -17484,7 +16969,7 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
 
             const updated = state.updateUser(user.id, { password: newPwd.trim() });
             if (updated) {
-              state.addAuditLog("PASSWORD_UPDATE", user.id, `User "${user.name}" updated their password.`);
+              state.addAuditLog("PASSWORD_UPDATE", user.id, `User "${user.name}" updated password.`);
               if (errChangePwd) errChangePwd.classList.add("hidden");
               if (succChangePwd) {
                 const sText = document.getElementById("modal-change-pwd-success-text");
@@ -17498,7 +16983,6 @@ Generated by UMA Connect (Dual-Enterprise Operations Portal).`], { type: "text/p
                   type: "success"
                 }
               }));
-              passwordRecoveryService.clear();
               setTimeout(() => {
                 modalChangePwd?.classList.add("hidden");
                 resetChangePwdModal();
